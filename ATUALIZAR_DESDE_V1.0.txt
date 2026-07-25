@@ -1,0 +1,11 @@
+ATUALIZAR DA VERSÃO 1.0 PARA A VERSÃO 1.1
+==========================================
+
+1. Feche a instalação atual com Alt+F4.
+2. Descompacte a versão 1.1 numa pasta nova.
+3. Execute EXECUTAR_DEMO_WINDOWS.bat e confirme o funcionamento com o rato.
+4. Execute EXECUTAR_WINDOWS.bat e autorize a câmara, caso o navegador volte a pedir.
+5. Depois do teste, pode arquivar ou eliminar a pasta da versão 1.0.
+
+Não copie apenas o ficheiro JavaScript da versão nova para a pasta antiga: a
+configuração e a estrutura da entrada da mão também foram alteradas.

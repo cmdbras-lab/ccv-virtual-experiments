@@ -1,0 +1,24 @@
+{
+  "name": "ciencia-em-movimento",
+  "version": "2.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Plataforma modular de experiências científicas controladas por gestos, com cinco jogos, menu seguro e ranking global.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "setup": "node scripts/setup-assets.mjs",
+    "postinstall": "node scripts/setup-assets.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "tsc --noEmit && npm run build",
+    "kiosk": "node scripts/kiosk.mjs",
+    "serve": "node scripts/static-server.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs"
+  },
+  "dependencies": {
+    "@mediapipe/hands": "0.4.1675469240"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.1.5"
+  }
+}

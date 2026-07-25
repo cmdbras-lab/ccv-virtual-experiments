@@ -1,0 +1,16 @@
+@echo off
+chcp 65001 >nul
+cd /d "%~dp0"
+where node >nul 2>nul
+if errorlevel 1 (
+  echo ERRO: Node.js nao foi encontrado.
+  echo Instale a versao LTS de https://nodejs.org e execute novamente.
+  pause
+  exit /b 1
+)
+if not exist "dist\index.html" (
+  echo ERRO: pasta dist em falta.
+  pause
+  exit /b 1
+)
+node scripts\kiosk.mjs

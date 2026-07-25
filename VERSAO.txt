@@ -1,0 +1,2 @@
+Ciência em Movimento 2.2.0
+Pacote completo com código-fonte e distribuição executável.

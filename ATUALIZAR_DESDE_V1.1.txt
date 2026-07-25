@@ -1,0 +1,8 @@
+CIÊNCIA EM MOVIMENTO 2.0 — ATUALIZAÇÃO DESDE 1.1
+
+1. Descompacte a versão 2.0 numa pasta nova.
+2. Não substitua ficheiros individualmente na pasta 1.1.
+3. Teste primeiro EXECUTAR_DEMO_WINDOWS.bat.
+4. Depois execute EXECUTAR_WINDOWS.bat e autorize a câmara.
+5. O Top anterior é migrado quando o mesmo perfil do navegador conserva o armazenamento local; os registos antigos surgem sem iniciais.
+6. Para limpar todos os resultados, prima Ctrl + Shift + L no menu.

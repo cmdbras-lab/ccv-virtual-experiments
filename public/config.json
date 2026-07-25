@@ -1,0 +1,68 @@
+{
+  "schoolName": "Clube Ciência Viva Abel Salazar",
+  "installationTitle": "Ciência em Movimento",
+  "cameraMirrored": true,
+  "handDetectionFps": 24,
+  "idleResetSeconds": 38,
+  "autonomous": {
+    "autoStartCamera": true,
+    "presenceRecentSeconds": 4.5,
+    "greetingCooldownSeconds": 28,
+    "voiceEnabled": true
+  },
+  "branding": {
+    "schoolMark": "branding/aeas-mark.svg",
+    "scienceMark": "branding/ciencia-viva-mark.svg",
+    "coordinator": "Coordenador CCV — Prof. Carlos Brás",
+    "developmentCredit": "Desenvolvido por Prof. Carlos Brás com recurso a AI"
+  },
+  "menu": {
+    "dwellSeconds": 3.5,
+    "initialDelaySeconds": 1.2,
+    "stableRadiusPx": 88,
+    "cardInsetFraction": 0.05,
+    "allowPinchShortcut": false
+  },
+  "leaderboard": {
+    "globalLimit": 10,
+    "displayLimit": 7,
+    "nameLength": 3,
+    "nameEntrySeconds": 18
+  },
+  "orbit": {
+    "challengeSeconds": 6,
+    "maximumFlightSeconds": 18,
+    "launchVelocityScale": 2.45,
+    "gravityStrength": 0.015,
+    "targetRadiusFraction": 0.29,
+    "assistanceStrength": 0.55,
+    "successQualityThreshold": 0.43,
+    "showHandSkeleton": true,
+    "showTrajectoryPreview": true,
+    "successObservationOrbits": 3,
+    "observationSpeedMultiplier": 1.25,
+    "starRadiusFraction": 0.058,
+    "planetRadiusFraction": 0.0245,
+    "planetMassRelative": 1.6
+  },
+  "molecules": {
+    "successObservationSeconds": 10
+  },
+  "laser": {
+    "aimHoldSeconds": 0.8,
+    "observationSeconds": 2.8,
+    "quizDwellSeconds": 2.0
+  },
+  "waves": {
+    "successHoldSeconds": 1.15,
+    "targetAmplitude": 0.3
+  },
+  "vectorMaze": {
+    "maximumSeconds": 90,
+    "accelerationScale": 1.05,
+    "dragPerSecond": 0.43,
+    "maximumSpeedFraction": 0.4,
+    "massFactor": 2.15,
+    "controlResponsePerSecond": 2.35
+  }
+}
