@@ -33,7 +33,23 @@ jobs:
         run: npm run setup
 
       - name: Compilar e verificar tipos
-        run: npm run check
+        id: compile
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee ci-check.log
+
+      - name: Guardar diagnóstico de compilação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-typescript
+          path: ci-check.log
+          if-no-files-found: error
+
+      - name: Interromper após erro de compilação
+        if: steps.compile.outcome == 'failure'
+        run: exit 1
 
       - name: Teste estrutural
         run: npm run test:smoke
