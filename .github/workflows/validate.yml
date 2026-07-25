@@ -1,0 +1,62 @@
+name: Validar projeto
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Configurar registo npm público
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set replace-registry-host always
+
+      - name: Instalar dependências
+        run: npm ci --ignore-scripts
+
+      - name: Preparar recursos MediaPipe
+        run: npm run setup
+
+      - name: Compilar e verificar tipos
+        id: compile
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run check 2>&1 | tee ci-check.log
+
+      - name: Guardar diagnóstico de compilação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostico-typescript
+          path: ci-check.log
+          if-no-files-found: error
+
+      - name: Interromper após erro de compilação
+        if: steps.compile.outcome == 'failure'
+        run: exit 1
+
+      - name: Teste estrutural
+        run: npm run test:smoke
+
+      - name: Guardar versão compilada
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciencia-em-movimento-dist
+          path: dist/
+          if-no-files-found: error
