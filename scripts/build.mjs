@@ -9,24 +9,7 @@ const tsc = path.join(root, 'node_modules', '.bin', process.platform === 'win32'
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(assets, { recursive: true });
-execFileSync(tsc, [
-  '--target', 'ES2022',
-  '--useDefineForClassFields', 'true',
-  '--module', 'ESNext',
-  '--moduleResolution', 'Bundler',
-  '--lib', 'ES2022,DOM,DOM.Iterable',
-  '--skipLibCheck', 'true',
-  '--esModuleInterop', 'true',
-  '--allowSyntheticDefaultImports', 'true',
-  '--strict', 'true',
-  '--noFallthroughCasesInSwitch', 'true',
-  '--noUncheckedIndexedAccess', 'true',
-  '--rootDir', 'src',
-  '--outDir', 'dist/assets',
-  '--sourceMap', 'true',
-  'src/main.ts',
-  'src/mediapipe-hands.d.ts',
-], { cwd: root, stdio: 'inherit' });
+execFileSync(tsc, ['--project', 'tsconfig.build.json'], { cwd: root, stdio: 'inherit' });
 
 const mainPath = path.join(assets, 'main.js');
 const main = (await readFile(mainPath, 'utf8')).replace(/^import ['"]\.\/styles\.css['"];\r?\n/, '');
