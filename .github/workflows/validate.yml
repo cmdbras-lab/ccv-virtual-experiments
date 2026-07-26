@@ -2,13 +2,15 @@ name: Validar projeto
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, update/ciencia-em-movimento-2.4.1]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
 
 jobs:
   validate:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -69,3 +71,30 @@ jobs:
           name: ciencia-em-movimento-dist
           path: dist/
           if-no-files-found: error
+
+  deploy-pages:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/update/ciencia-em-movimento-2.4.1'
+    needs: validate
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar conteúdo
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
