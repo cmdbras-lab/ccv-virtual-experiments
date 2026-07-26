@@ -11,10 +11,11 @@
     "voiceEnabled": true
   },
   "branding": {
-    "schoolMark": "branding/aeas-mark.svg",
-    "scienceMark": "branding/ciencia-viva-mark.svg",
-    "coordinator": "Coordenador CCV — Prof. Carlos Brás",
-    "developmentCredit": "Desenvolvido por Prof. Carlos Brás com recurso a AI"
+    "schoolMark": "branding/logo-aeas.png",
+    "fundingMark": "branding/barra-prr-2024.png",
+    "scienceMark": "branding/logo-clubes-ciencia-viva.png",
+    "coordinator": "",
+    "developmentCredit": "Desenvolvido com recurso a IA pelo coordenador CCV Abel Salazar - prof. Carlos Brás."
   },
   "menu": {
     "dwellSeconds": 3.5,
@@ -58,11 +59,12 @@
     "targetAmplitude": 0.3
   },
   "vectorMaze": {
-    "maximumSeconds": 90,
+    "maximumSeconds": 120,
     "accelerationScale": 1.05,
     "dragPerSecond": 0.43,
     "maximumSpeedFraction": 0.4,
     "massFactor": 2.15,
-    "controlResponsePerSecond": 2.35
+    "controlResponsePerSecond": 2.35,
+    "collisionPenaltyPoints": 25
   }
 }

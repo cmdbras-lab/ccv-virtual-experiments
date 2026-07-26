@@ -24,4 +24,8 @@ O sistema tenta iniciar a câmara automaticamente, chama a atenção de quem se 
 
 ## Marcas institucionais
 
-Os ficheiros `public/branding/aeas-mark.svg` e `public/branding/ciencia-viva-mark.svg` são marcas tipográficas locais simplificadas. Para usar logótipos oficiais, substitua os dois ficheiros mantendo os nomes e, depois, volte a construir a distribuição.
+Os ficheiros `public/branding/logo-aeas.png`, `public/branding/barra-prr-2024.png` e `public/branding/logo-clubes-ciencia-viva.png` são os logótipos originais usados pela aplicação. Preserve estes nomes e não altere a proporção das imagens.
+
+## Instalação 2.4 sem dependências npm
+
+No pacote completo, `INSTALAR_WINDOWS.bat` apenas verifica a distribuição já compilada. Não descarrega bibliotecas nem executa `npm install`. O acesso à Internet só é necessário para quem pretenda alterar e recompilar o código-fonte.

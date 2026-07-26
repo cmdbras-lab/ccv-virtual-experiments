@@ -8,7 +8,7 @@ export const moleculeManifest: ExperienceManifest = {
   subtitle: 'Monta-a e observa a estrutura completa.',
   description: 'Monta moléculas simples, observa-as a rodar e descobre curiosidades sobre cada substância.',
   icon: '⚛️',
-  version: '2.2.0',
+  version: '2.4.1',
   author: 'Clube Ciência Viva Abel Salazar',
 };
 

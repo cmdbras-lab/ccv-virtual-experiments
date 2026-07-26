@@ -8,7 +8,7 @@ export const wavesManifest: ExperienceManifest = {
   subtitle: 'Descobre as sete cores do arco-íris.',
   description: 'Relaciona frequência, comprimento de onda, cor e intensidade no espetro visível.',
   icon: '🌈',
-  version: '2.2.0',
+  version: '2.4.1',
   author: 'Clube Ciência Viva Abel Salazar',
 };
 

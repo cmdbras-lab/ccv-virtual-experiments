@@ -54,6 +54,12 @@ jobs:
       - name: Teste estrutural
         run: npm run test:smoke
 
+      - name: Teste HTTP
+        run: node scripts/http-test.mjs
+
+      - name: Validar distribuição em runtime
+        run: node scripts/validate-runtime.mjs
+
       - name: Guardar versão compilada
         uses: actions/upload-artifact@v4
         with:
