@@ -448,7 +448,27 @@ export class OrbitExperience implements Experience {
 
   private drawStars(): void {
     const { ctx } = this.context;
-    for (const star of this.sta…168 tokens truncated… * 2);
+    for (const star of this.stars) {
+      const pulse = 0.72 + Math.sin(this.elapsed * 1.4 + star.phase) * 0.28;
+      ctx.globalAlpha = star.alpha * pulse;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  private drawOrbitGuides(): void {
+    const { ctx } = this.context;
+    const center = this.center();
+    const target = this.targetRadius();
+    ctx.save();
+    ctx.setLineDash([7, 14]);
+    ctx.strokeStyle = 'rgba(114, 207, 255, 0.22)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, target, 0, Math.PI * 2);
     ctx.stroke();
     ctx.fillStyle = 'rgba(170,225,255,0.58)';
     ctx.font = `500 ${Math.max(13, this.viewport.height * 0.017)}px system-ui`;

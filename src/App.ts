@@ -388,7 +388,38 @@ export class App {
   private drawGlobalTopPanel(): void {
     const { ctx } = this.runner;
     const { width, height } = this.viewport();
-    const rect: Rect = { x: width * 0.735, y: height * 0.215, width: width * 0.23, h…408 tokens truncated… y + rowHeight * 0.32);
+    const rect: Rect = { x: width * 0.735, y: height * 0.215, width: width * 0.23, height: height * 0.625 };
+    roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 24);
+    ctx.fillStyle = 'rgba(0,0,0,0.24)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,211,109,0.32)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#ffd36d';
+    ctx.textAlign = 'center';
+    ctx.font = `800 ${Math.max(21, height * 0.029)}px system-ui`;
+    ctx.fillText('🏆 TOP GLOBAL', rect.x + rect.width / 2, rect.y + height * 0.055);
+
+    const top = this.runner.scores.topGlobal(this.config.leaderboard.displayLimit);
+    const rowHeight = rect.height * 0.105;
+    if (top.length === 0) {
+      ctx.fillStyle = 'rgba(220,240,255,0.7)';
+      ctx.font = `500 ${Math.max(14, height * 0.019)}px system-ui`;
+      ctx.fillText('Ainda sem resultados', rect.x + rect.width / 2, rect.y + rect.height * 0.35);
+      return;
+    }
+    top.forEach((entry, index) => {
+      const manifest = this.manifestFor(entry.experienceId);
+      const y = rect.y + height * 0.1 + rowHeight * index;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = index === 0 ? '#ffd36d' : '#ffffff';
+      ctx.font = `800 ${Math.max(15, height * 0.021)}px system-ui`;
+      ctx.fillText(`${index + 1}. ${entry.playerName}`, rect.x + rect.width * 0.08, y);
+      ctx.textAlign = 'right';
+      ctx.fillText(`${manifest.icon} ${entry.score}`, rect.x + rect.width * 0.92, y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.moveTo(rect.x + rect.width * 0.08, y + rowHeight * 0.32);
       ctx.lineTo(rect.x + rect.width * 0.92, y + rowHeight * 0.32);
       ctx.stroke();
     });
