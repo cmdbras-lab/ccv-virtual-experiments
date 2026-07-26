@@ -21,6 +21,9 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Fixar npm compatível com o lockfile
+        run: npm install --global npm@11.9.0
+
       - name: Configurar registo npm público
         run: |
           npm config set registry https://registry.npmjs.org/
