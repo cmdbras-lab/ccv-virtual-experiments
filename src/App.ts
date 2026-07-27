@@ -317,7 +317,7 @@ export class App {
     ctx.fillText(this.config.installationTitle, width * 0.05, height * 0.145);
     ctx.fillStyle = 'rgba(220,240,255,0.82)';
     ctx.font = `500 ${Math.max(17, height * 0.023)}px system-ui`;
-    ctx.fillText(input.present ? 'Aponta para uma experiência e mantém a mão durante 3 segundos.' : 'Mostra uma mão à câmara para escolher uma experiência.', width * 0.05, height * 0.19);
+    ctx.fillText(input.present ? `Aponta para uma experiência e mantém a mão durante ${this.config.menu.dwellSeconds.toFixed(1)} segundos.` : 'Mostra uma mão à câmara para escolher uma experiência.', width * 0.05, height * 0.19);
 
     for (const card of this.menuCards()) this.drawMenuCard(card.manifest, card.rect, card.manifest.id === this.menuHoverId, now);
     this.drawGlobalTopPanel();
@@ -341,15 +341,39 @@ export class App {
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    const contentX = rect.x + rect.width * 0.07;
+    const contentWidth = rect.width * 0.86;
+    ctx.beginPath();
+    ctx.rect(rect.x + 4, rect.y + 4, rect.width - 8, rect.height - 8);
+    ctx.clip();
+
     ctx.fillStyle = '#ffffff';
-    ctx.font = `${Math.max(42, rect.height * 0.29)}px system-ui`;
+    ctx.font = `${Math.max(36, rect.height * 0.23)}px system-ui`;
     ctx.textAlign = 'left';
-    ctx.fillText(manifest.icon, rect.x + rect.width * 0.07, rect.y + rect.height * 0.39);
-    ctx.font = `800 ${Math.max(21, rect.height * 0.13)}px system-ui`;
-    ctx.fillText(manifest.title, rect.x + rect.width * 0.07, rect.y + rect.height * 0.64);
-    ctx.fillStyle = 'rgba(215,238,250,0.76)';
-    ctx.font = `500 ${Math.max(13, rect.height * 0.075)}px system-ui`;
-    this.wrapText(manifest.subtitle, rect.x + rect.width * 0.07, rect.y + rect.height * 0.78, rect.width * 0.86, rect.height * 0.1);
+    ctx.textBaseline = 'top';
+    ctx.fillText(manifest.icon, contentX, rect.y + rect.height * 0.10);
+
+    this.drawTextBlockInRect(
+      manifest.title,
+      {
+        x: contentX,
+        y: rect.y + rect.height * 0.42,
+        width: contentWidth,
+        height: rect.height * 0.22,
+      },
+      { maxLines: 2, preferredFontSize: Math.min(22, rect.height * 0.098), minimumFontSize: 14, fontWeight: 800, lineHeightFactor: 1.05, color: '#ffffff' },
+    );
+
+    this.drawTextBlockInRect(
+      manifest.subtitle,
+      {
+        x: contentX,
+        y: rect.y + rect.height * 0.68,
+        width: contentWidth,
+        height: rect.height * 0.16,
+      },
+      { maxLines: 2, preferredFontSize: Math.min(14, rect.height * 0.062), minimumFontSize: 10, fontWeight: 500, lineHeightFactor: 1.14, color: 'rgba(215,238,250,0.76)' },
+    );
 
     if (hovered) {
       const progress = Math.min(1, (now - this.menuHoverStartedAt) / (this.config.menu.dwellSeconds * 1000));
@@ -364,7 +388,7 @@ export class App {
   private drawGlobalTopPanel(): void {
     const { ctx } = this.runner;
     const { width, height } = this.viewport();
-    const rect: Rect = { x: width * 0.735, y: height * 0.215, width: width * 0.23, height: height * 0.67 };
+    const rect: Rect = { x: width * 0.735, y: height * 0.215, width: width * 0.23, height: height * 0.625 };
     roundedRect(ctx, rect.x, rect.y, rect.width, rect.height, 24);
     ctx.fillStyle = 'rgba(0,0,0,0.24)';
     ctx.fill();
@@ -510,7 +534,7 @@ export class App {
     const remaining = Math.max(0, this.config.leaderboard.nameEntrySeconds - (now - this.nameEntryStartedAt) / 1000);
     ctx.fillStyle = 'rgba(210,235,250,0.7)';
     ctx.font = `500 ${Math.max(14, height * 0.018)}px system-ui`;
-    ctx.fillText(`Tempo restante: ${Math.ceil(remaining)} s · sem escolha será guardado como ---`, width / 2, height * 0.965);
+    ctx.fillText(`Tempo restante: ${Math.ceil(remaining)} s · sem escolha será guardado como ---`, width / 2, height * 0.875);
     drawHandSkeleton(ctx, input, viewport);
   }
 
@@ -574,9 +598,9 @@ export class App {
     const columns = 6;
     const rows = 5;
     const areaX = width * 0.12;
-    const areaY = height * 0.32;
+    const areaY = height * 0.285;
     const areaWidth = width * 0.76;
-    const areaHeight = height * 0.58;
+    const areaHeight = height * 0.535;
     const gap = Math.max(8, Math.min(width, height) * 0.012);
     const keyWidth = (areaWidth - gap * (columns - 1)) / columns;
     const keyHeight = (areaHeight - gap * (rows - 1)) / rows;
@@ -599,7 +623,7 @@ export class App {
     const areaX = width * 0.035;
     const areaY = height * 0.225;
     const areaWidth = width * 0.68;
-    const areaHeight = height * 0.66;
+    const areaHeight = height * 0.615;
     const gapX = width * 0.014;
     const gapY = height * 0.03;
     const cardWidth = (areaWidth - gapX * (columns - 1)) / columns;
@@ -644,22 +668,27 @@ export class App {
       'laboratorio-de-lasers': 'Faz pinça para começar. Move a mão à volta do espelho até o feixe refletido atingir o alvo no topo.',
       'constroi-uma-molecula': 'Faz pinça para começar. Agarra cada átomo e larga-o na posição correta.',
       'domina-as-ondas': 'Faz pinça para começar. Move a mão para reproduzir cada uma das sete cores do arco-íris.',
-      'labirinto-vetorial': 'Faz pinça para iniciar o cronómetro. Desloca a mão suavemente para aplicar força e orientar a bola.',
+      'labirinto-vetorial': 'Faz pinça para iniciar o cronómetro. Desloca a mão suavemente para aplicar força e orientar a bola. Cada colisão com uma parede retira pontos.',
     };
     return instructions[id] ?? 'Faz pinça para começar a experiência.';
   }
 
   private brandMarksHtml(): string {
     return `<div class="brand-marks">
-      <img src="${this.escape(this.config.branding.schoolMark)}" alt="Agrupamento de Escolas Abel Salazar">
-      <img src="${this.escape(this.config.branding.scienceMark)}" alt="Clube Ciência Viva">
+      <img class="school-mark" src="${this.escape(this.config.branding.schoolMark)}" alt="Agrupamento de Escolas Abel Salazar">
+      <img class="funding-mark" src="${this.escape(this.config.branding.fundingMark)}" alt="PRR, República Portuguesa e União Europeia — NextGenerationEU">
+      <img class="science-mark" src="${this.escape(this.config.branding.scienceMark)}" alt="Clubes Ciência Viva na Escola">
     </div>`;
   }
 
   private brandingFooterHtml(): string {
+    const credit = [this.config.branding.coordinator, this.config.branding.developmentCredit]
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' · ');
     return `<footer class="branding-footer">
       ${this.brandMarksHtml()}
-      <span>${this.escape(this.config.branding.coordinator)} · ${this.escape(this.config.branding.developmentCredit)}</span>
+      <span>${this.escape(credit)}</span>
     </footer>`;
   }
 
@@ -674,7 +703,7 @@ export class App {
       subtitle: '',
       description: '',
       icon: '🔬',
-      version: '2.2.0',
+      version: '2.4.1',
       author: '',
     };
   }
@@ -687,20 +716,100 @@ export class App {
     }).join('');
   }
 
-  private wrapText(text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
+  private drawTextBlockInRect(
+    text: string,
+    rect: Rect,
+    options: {
+      maxLines: number;
+      preferredFontSize: number;
+      minimumFontSize: number;
+      fontWeight: number;
+      lineHeightFactor: number;
+      color: string;
+    },
+  ): void {
     const { ctx } = this.runner;
-    const words = text.split(' ');
-    let line = '';
-    let lineIndex = 0;
-    for (const word of words) {
-      const candidate = line ? `${line} ${word}` : word;
-      if (ctx.measureText(candidate).width > maxWidth && line) {
-        ctx.fillText(line, x, y + lineIndex * lineHeight);
-        line = word;
-        lineIndex += 1;
-      } else line = candidate;
+    const block = this.fitTextBlock(
+      text,
+      rect.width,
+      rect.height,
+      options.maxLines,
+      options.preferredFontSize,
+      options.minimumFontSize,
+      options.fontWeight,
+      options.lineHeightFactor,
+    );
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.clip();
+    ctx.fillStyle = options.color;
+    ctx.font = `${options.fontWeight} ${block.fontSize}px system-ui`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const lineHeight = block.fontSize * options.lineHeightFactor;
+    block.lines.forEach((line, index) => ctx.fillText(line, rect.x, rect.y + index * lineHeight, rect.width));
+    ctx.restore();
+  }
+
+  private fitTextBlock(
+    text: string,
+    maxWidth: number,
+    maxHeight: number,
+    maxLines: number,
+    preferredFontSize: number,
+    minimumFontSize: number,
+    fontWeight: number,
+    lineHeightFactor: number,
+  ): { fontSize: number; lines: string[] } {
+    const { ctx } = this.runner;
+    for (let fontSize = Math.floor(preferredFontSize); fontSize >= minimumFontSize; fontSize -= 1) {
+      ctx.font = `${fontWeight} ${fontSize}px system-ui`;
+      const lines = this.textLines(text, maxWidth);
+      const blockHeight = lines.length * fontSize * lineHeightFactor;
+      if (lines.length <= maxLines && blockHeight <= maxHeight) return { fontSize, lines };
     }
-    if (line) ctx.fillText(line, x, y + lineIndex * lineHeight);
+    ctx.font = `${fontWeight} ${minimumFontSize}px system-ui`;
+    const allLines = this.textLines(text, maxWidth);
+    const lines = allLines.slice(0, maxLines);
+    if (allLines.length > maxLines && lines.length === maxLines) {
+      let finalLine = lines[maxLines - 1] ?? '';
+      while (finalLine.length > 1 && ctx.measureText(`${finalLine}…`).width > maxWidth) finalLine = finalLine.slice(0, -1);
+      lines[maxLines - 1] = `${finalLine.trimEnd()}…`;
+    }
+    return { fontSize: minimumFontSize, lines };
+  }
+
+  private textLines(text: string, maxWidth: number): string[] {
+    const { ctx } = this.runner;
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let line = '';
+    for (const rawWord of words) {
+      let word = rawWord;
+      if (ctx.measureText(word).width > maxWidth) {
+        if (line) {
+          lines.push(line);
+          line = '';
+        }
+        while (word && ctx.measureText(word).width > maxWidth) {
+          let cut = word.length - 1;
+          while (cut > 1 && ctx.measureText(word.slice(0, cut)).width > maxWidth) cut -= 1;
+          lines.push(word.slice(0, cut));
+          word = word.slice(cut);
+        }
+      }
+      if (!word) continue;
+      const candidate = line ? `${line} ${word}` : word;
+      if (line && ctx.measureText(candidate).width > maxWidth) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = candidate;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
   }
 
   private contextToneSuccess(): void {

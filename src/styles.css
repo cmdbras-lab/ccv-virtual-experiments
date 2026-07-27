@@ -109,10 +109,12 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
 .brand-marks img {
   display: block;
   width: auto;
-  height: clamp(28px, 4vh, 44px);
-  max-width: min(150px, 22vw);
   object-fit: contain;
+  flex: 0 1 auto;
 }
+.brand-marks .school-mark { height: clamp(34px, 5.2vh, 54px); max-width: min(170px, 24vw); }
+.brand-marks .funding-mark { height: clamp(28px, 4.1vh, 42px); max-width: min(300px, 42vw); }
+.brand-marks .science-mark { height: clamp(36px, 5.3vh, 56px); max-width: min(125px, 18vw); }
 .permission-card > .brand-marks { margin-bottom: 12px; }
 
 .branding-footer {
@@ -123,19 +125,21 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
   min-height: 48px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 6px 16px;
   border: 1px solid rgba(150, 214, 255, 0.14);
   border-radius: 18px;
   background: rgba(2, 7, 20, 0.72);
   color: rgba(225, 243, 255, 0.76);
-  font-size: clamp(0.68rem, 1.1vw, 0.88rem);
+  font-size: clamp(0.64rem, 0.92vw, 0.82rem);
   letter-spacing: 0.02em;
   backdrop-filter: blur(12px);
 }
-.branding-footer .brand-marks { gap: 8px; flex: 0 0 auto; }
-.branding-footer .brand-marks img { height: clamp(22px, 3vh, 32px); max-width: 100px; }
+.branding-footer .brand-marks { gap: 7px; flex: 0 1 auto; flex-wrap: nowrap; }
+.branding-footer .brand-marks .school-mark { height: 37px; max-width: 118px; }
+.branding-footer .brand-marks .funding-mark { height: 31px; max-width: 225px; }
+.branding-footer .brand-marks .science-mark { height: 38px; max-width: 92px; }
 
 .visitor-invite {
   position: absolute;
@@ -190,4 +194,110 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
   .branding-footer { left: 8px; right: 8px; gap: 8px; padding: 5px 8px; }
   .branding-footer span { max-width: 70vw; text-align: center; }
   .visitor-invite { top: 49%; }
+}
+
+/* Layout de instalação otimizado para televisores e monitores 1366 × 768. */
+.brand-marks img {
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.branding-footer span {
+  min-width: 0;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.2;
+  flex: 1 1 360px;
+}
+
+@media (min-width: 1000px) and (max-height: 800px) {
+  .permission-card,
+  .result-card,
+  .status-card {
+    width: min(760px, 88vw);
+    max-height: calc(100vh - 72px);
+    padding: 16px 26px;
+    border-radius: 22px;
+  }
+
+  .permission-card { width: min(700px, 86vw); }
+  .permission-card > .brand-marks { margin-bottom: 4px; }
+  .permission-card > .brand-marks { gap: 8px; flex-wrap: nowrap; }
+  .permission-card > .brand-marks .school-mark { height: 43px; max-width: 135px; }
+  .permission-card > .brand-marks .funding-mark { height: 34px; max-width: 245px; }
+  .permission-card > .brand-marks .science-mark { height: 45px; max-width: 102px; }
+  .brand { font-size: 0.78rem; }
+  .planet-mark { font-size: 44px; margin: 3px 0 0; }
+  h1 { margin: 6px 0; font-size: clamp(2rem, 3.5vw, 3rem); }
+  h2 { margin: 4px 0 9px; font-size: clamp(1.1rem, 2vw, 1.42rem); }
+  p { margin: 7px 0; font-size: 0.94rem; line-height: 1.35; }
+  .primary-button,
+  .secondary-button {
+    min-width: 190px;
+    margin: 4px;
+    padding: 10px 18px;
+  }
+  .small-note { margin-top: 7px; font-size: 0.78rem; }
+
+  .privacy-chip,
+  .help-chip {
+    top: 10px;
+    padding: 7px 11px;
+    font-size: 0.7rem;
+  }
+
+  .result-card {
+    width: min(790px, 88vw);
+    margin-bottom: 51px;
+    padding: 12px 24px;
+  }
+  .score-label { font-size: 0.78rem; }
+  .score-number { font-size: 3.8rem; }
+  .result-card h1 { margin: 3px 0; font-size: 1.85rem; }
+  .pedagogical-highlight { margin: 6px auto 8px; padding: 9px 14px; border-radius: 15px; }
+  .pedagogical-highlight strong { margin-bottom: 3px; font-size: 0.7rem; }
+  .pedagogical-highlight p { font-size: 1rem; line-height: 1.3; }
+  .result-details { gap: 6px; margin: 7px 0; }
+  .result-details span { padding: 5px 9px; font-size: 0.8rem; }
+  .top-alert { margin: 7px auto; padding: 7px 12px; font-size: 0.9rem; }
+  .leaderboard { margin: 7px auto; padding: 8px 16px; border-radius: 14px; }
+  .leaderboard h3 { margin-bottom: 4px; font-size: 0.92rem; }
+  .leaderboard div { padding: 2px 0; font-size: 0.78rem; }
+  .compact-leaderboard { margin-top: 6px; margin-bottom: 6px; }
+
+  .visitor-invite { top: 49%; width: min(570px, 72vw); padding: 18px 26px; }
+  .visitor-invite strong { font-size: 2rem; }
+  .visitor-invite span { font-size: 1rem; }
+
+  .branding-footer {
+    left: 10px;
+    right: 10px;
+    bottom: 5px;
+    min-height: 46px;
+    gap: 10px;
+    padding: 4px 10px;
+    border-radius: 13px;
+    font-size: 0.72rem;
+  }
+  .branding-footer .brand-marks { gap: 5px; }
+  .branding-footer .brand-marks .school-mark { height: 34px; max-width: 108px; padding: 2px 4px; }
+  .branding-footer .brand-marks .funding-mark { height: 28px; max-width: 205px; padding: 2px 4px; }
+  .branding-footer .brand-marks .science-mark { height: 35px; max-width: 84px; padding: 2px 4px; }
+}
+
+@media (max-width: 1180px), (max-height: 680px) {
+  .branding-footer span { white-space: normal; line-height: 1.15; }
+}
+
+/* Versão 2.4: os logótipos originais são mantidos sem deformação e os cartões recortam qualquer excesso. */
+.brand-marks { min-width: 0; }
+.brand-marks img { min-width: 0; }
+@media (max-width: 1050px) {
+  .branding-footer .funding-mark { display: none; }
+}
+@media (max-width: 760px) {
+  .permission-card > .brand-marks { flex-wrap: wrap; }
+  .branding-footer .brand-marks .school-mark { height: 29px; max-width: 92px; }
+  .branding-footer .brand-marks .science-mark { height: 30px; max-width: 72px; }
 }

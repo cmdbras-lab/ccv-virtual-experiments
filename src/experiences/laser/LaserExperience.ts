@@ -8,7 +8,7 @@ export const laserManifest: ExperienceManifest = {
   subtitle: 'Reflete a luz e compara os ângulos.',
   description: 'Orienta um espelho, acerta em alvos e responde a perguntas sobre a lei da reflexão.',
   icon: '🔦',
-  version: '2.2.0',
+  version: '2.4.1',
   author: 'Clube Ciência Viva Abel Salazar',
 };
 

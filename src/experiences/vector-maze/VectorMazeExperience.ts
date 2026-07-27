@@ -8,7 +8,7 @@ export const vectorMazeManifest: ExperienceManifest = {
   subtitle: 'Controla a aceleração e guia a bola.',
   description: 'Aplica uma força com a mão e observa os vetores velocidade e aceleração enquanto atravessas o labirinto.',
   icon: '🟠',
-  version: '2.2.0',
+  version: '2.4.1',
   author: 'Clube Ciência Viva Abel Salazar',
 };
 
@@ -36,6 +36,9 @@ export class VectorMazeExperience implements Experience {
   private successElapsed = 0;
   private runTime = 0;
   private completionTime = 0;
+  private lastCollisionAt = -Number.POSITIVE_INFINITY;
+  private collisionFlashUntil = 0;
+  private collisionMessagePosition: Vec2 = { x: 0, y: 0 };
 
   mount(context: ExperienceContext): void { this.context = context; }
 
@@ -51,7 +54,10 @@ export class VectorMazeExperience implements Experience {
     this.successElapsed = 0;
     this.runTime = 0;
     this.completionTime = 0;
+    this.lastCollisionAt = -Number.POSITIVE_INFINITY;
+    this.collisionFlashUntil = 0;
     this.resetBall();
+    this.collisionMessagePosition = { ...this.ball };
   }
 
   update(dtSeconds: number, input: HandInput): void {
@@ -110,6 +116,7 @@ export class VectorMazeExperience implements Experience {
       this.drawBall();
       this.drawVectors();
       this.drawControlGuide();
+      this.drawCollisionFeedback();
     }
     if (this.input && this.phase === 'playing') drawHandSkeleton(ctx, this.input, this.viewport);
     this.drawHud();
@@ -189,10 +196,11 @@ export class VectorMazeExperience implements Experience {
     this.completionTime = this.runTime;
     this.targetAcceleration = { x: 0, y: 0 };
     const timeQuality = Math.max(0, 1 - this.runTime / this.context.config.vectorMaze.maximumSeconds);
-    const collisionQuality = Math.max(0, 1 - this.collisions / 22);
     const ideal = Math.min(this.viewport.width, this.viewport.height) * 2.35;
     const routeQuality = Math.max(0, Math.min(1, ideal / Math.max(ideal, this.distanceTravelled)));
-    this.score = Math.round(360 + timeQuality * 280 + collisionQuality * 210 + routeQuality * 150);
+    const routePenalty = Math.round((1 - routeQuality) * 120);
+    const completionBonus = 190 + Math.round(timeQuality * 120);
+    this.score = Math.max(0, Math.min(1000, this.liveScore() + completionBonus - routePenalty));
     this.context.audio.success();
   }
 
@@ -200,7 +208,7 @@ export class VectorMazeExperience implements Experience {
     if (this.phase === 'finished') return;
     if (!success) {
       const progress = this.progressToGoal();
-      this.score = Math.round(progress * 380 + Math.max(0, 220 - this.collisions * 10));
+      this.score = Math.max(0, Math.round(progress * 420 + this.liveScore() * 0.25));
       this.context.audio.failure();
     }
     this.phase = 'finished';
@@ -216,6 +224,7 @@ export class VectorMazeExperience implements Experience {
       details: [
         `Cronómetro: ${(this.completionTime || this.runTime).toFixed(1)} s`,
         `Colisões: ${this.collisions}`,
+        `Pontos perdidos nas paredes: -${this.collisions * this.collisionPenalty()} pontos`,
         `Velocidade final: ${Math.hypot(this.velocity.x, this.velocity.y).toFixed(0)} px/s`,
       ],
     });
@@ -336,54 +345,116 @@ export class VectorMazeExperience implements Experience {
     ctx.restore();
   }
 
+  private drawCollisionFeedback(): void {
+    const remaining = this.collisionFlashUntil - performance.now();
+    if (remaining <= 0) return;
+    const { ctx } = this.context;
+    const { width, height } = this.viewport;
+    const opacity = Math.min(1, remaining / 260);
+    ctx.save();
+    ctx.strokeStyle = `rgba(255, 80, 70, ${0.25 + opacity * 0.7})`;
+    ctx.lineWidth = Math.max(8, height * 0.014);
+    ctx.strokeRect(5, 5, width - 10, height - 10);
+
+    const panelWidth = Math.min(width * 0.34, 440);
+    const panelHeight = Math.max(58, height * 0.09);
+    const x = Math.max(12, Math.min(width - panelWidth - 12, this.collisionMessagePosition.x - panelWidth / 2));
+    const y = Math.max(height * 0.19, Math.min(height - panelHeight - 72, this.collisionMessagePosition.y - panelHeight - 34));
+    roundedRect(ctx, x, y, panelWidth, panelHeight, 16);
+    ctx.fillStyle = `rgba(108, 8, 12, ${0.78 + opacity * 0.16})`;
+    ctx.fill();
+    ctx.strokeStyle = '#ff746d';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${Math.max(20, height * 0.03)}px system-ui`;
+    ctx.fillText(`COLISÃO! −${this.collisionPenalty()} PONTOS`, x + panelWidth / 2, y + panelHeight * 0.6);
+    ctx.restore();
+  }
+
   private drawHud(): void {
     const { ctx } = this.context;
     const { width, height } = this.viewport;
     ctx.textAlign = 'center';
     if (this.phase === 'instructions') {
       ctx.fillStyle = '#ffffff';
-      ctx.font = `800 ${Math.max(36, height * 0.06)}px system-ui`;
-      ctx.fillText('Labirinto vetorial', width / 2, height * 0.15);
-      ctx.font = `500 ${Math.max(19, height * 0.026)}px system-ui`;
+      ctx.font = `800 ${Math.max(34, height * 0.056)}px system-ui`;
+      ctx.fillText('Labirinto vetorial', width / 2, height * 0.14);
+      ctx.font = `500 ${Math.max(18, height * 0.024)}px system-ui`;
       ctx.fillStyle = 'rgba(225,242,255,0.9)';
-      ctx.fillText('Faz pinça para criar um ponto neutro.', width / 2, height * 0.23);
-      ctx.fillText('Desloca a mão: a direção e a distância controlam a aceleração.', width / 2, height * 0.28);
-      ctx.fillText('Abre a mão para deixar de aplicar força; a bola continua em movimento.', width / 2, height * 0.33);
-      ctx.fillText('A bola tem maior inércia: antecipa as curvas e trava com suavidade.', width / 2, height * 0.38);
+      ctx.fillText('Faz pinça para criar um ponto neutro.', width / 2, height * 0.22);
+      ctx.fillText('Desloca a mão: a direção e a distância controlam a aceleração.', width / 2, height * 0.27);
+      ctx.fillText('Abre a mão para deixar de aplicar força; a bola continua em movimento.', width / 2, height * 0.32);
+      ctx.fillText('A bola tem maior inércia: antecipa as curvas e trava com suavidade.', width / 2, height * 0.37);
+      ctx.fillStyle = '#ff9187';
+      ctx.font = `800 ${Math.max(19, height * 0.027)}px system-ui`;
+      ctx.fillText(`Cada choque numa parede retira ${this.collisionPenalty()} pontos.`, width / 2, height * 0.44);
       ctx.fillStyle = '#72f2b5';
       ctx.font = `800 ${Math.max(22, height * 0.032)}px system-ui`;
-      ctx.fillText('Faz pinça para começar o cronómetro', width / 2, height * 0.51);
+      ctx.fillText(`Faz pinça para começar · tens ${this.context.config.vectorMaze.maximumSeconds} segundos`, width / 2, height * 0.54);
       return;
     }
 
+    const timerWidth = Math.min(360, width * 0.29);
+    const timerHeight = Math.max(72, height * 0.105);
+    const timerX = width / 2 - timerWidth / 2;
+    const timerY = height * 0.018;
+    roundedRect(ctx, timerX, timerY, timerWidth, timerHeight, 18);
+    ctx.fillStyle = 'rgba(0, 6, 18, 0.88)';
+    ctx.fill();
+    ctx.strokeStyle = this.runTime > this.context.config.vectorMaze.maximumSeconds * 0.82 ? '#ff746d' : '#73e7ff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(205,236,255,0.78)';
+    ctx.font = `800 ${Math.max(12, height * 0.017)}px system-ui`;
+    ctx.fillText('CRONÓMETRO', width / 2, timerY + timerHeight * 0.27);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${Math.max(31, height * 0.052)}px ui-monospace, SFMono-Regular, Consolas, monospace`;
+    ctx.fillText(this.formatTime(this.runTime), width / 2, timerY + timerHeight * 0.75);
+
+    const leftX = width * 0.025;
+    const topY = height * 0.035;
+    const panelWidth = Math.min(250, width * 0.19);
+    const panelHeight = height * 0.215;
+    roundedRect(ctx, leftX, topY, panelWidth, panelHeight, 18);
+    ctx.fillStyle = 'rgba(1, 9, 25, 0.78)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,214,255,0.28)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
     ctx.textAlign = 'left';
     ctx.fillStyle = '#ffffff';
-    ctx.font = `700 ${Math.max(19, height * 0.026)}px system-ui`;
-    ctx.fillText(`Cronómetro: ${this.formatTime(this.runTime)}`, width * 0.03, height * 0.065);
+    ctx.font = `800 ${Math.max(18, height * 0.025)}px system-ui`;
+    ctx.fillText(`Pontos: ${this.liveScore()}`, leftX + 16, topY + height * 0.047);
+    ctx.fillStyle = this.collisions > 0 ? '#ff9187' : '#ffffff';
+    ctx.fillText(`Colisões: ${this.collisions}`, leftX + 16, topY + height * 0.09);
+    ctx.fillStyle = '#ff9187';
+    ctx.font = `700 ${Math.max(14, height * 0.019)}px system-ui`;
+    ctx.fillText(`Cada colisão: −${this.collisionPenalty()} pontos`, leftX + 16, topY + height * 0.13);
     ctx.fillStyle = 'rgba(225,242,255,0.72)';
-    ctx.font = `600 ${Math.max(15, height * 0.02)}px system-ui`;
-    ctx.fillText(`Limite: ${Math.max(0, this.context.config.vectorMaze.maximumSeconds - this.runTime).toFixed(0)} s`, width * 0.03, height * 0.1);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 ${Math.max(19, height * 0.026)}px system-ui`;
-    ctx.fillText(`Colisões: ${this.collisions}`, width * 0.03, height * 0.14);
+    ctx.fillText(`Restam: ${Math.max(0, Math.ceil(this.context.config.vectorMaze.maximumSeconds - this.runTime))} s`, leftX + 16, topY + height * 0.173);
+
+    ctx.textAlign = 'right';
+    ctx.font = `700 ${Math.max(15, height * 0.02)}px system-ui`;
     ctx.fillStyle = '#63d8ff';
-    ctx.fillText('azul: velocidade', width * 0.03, height * 0.185);
+    ctx.fillText('azul: velocidade', width * 0.965, height * 0.065);
     ctx.fillStyle = '#ff8a6a';
-    ctx.fillText('laranja: aceleração', width * 0.03, height * 0.225);
+    ctx.fillText('laranja: aceleração', width * 0.965, height * 0.105);
 
     if (this.phase === 'playing') {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(225,242,255,0.84)';
       ctx.font = `600 ${Math.max(15, height * 0.019)}px system-ui`;
-      ctx.fillText(this.input?.pinch ? 'Mantém a pinça e ajusta a força.' : 'Faz pinça para aplicar uma força à bola.', width / 2, height * 0.07);
+      ctx.fillText(this.input?.pinch ? 'Mantém a pinça e ajusta a força.' : 'Faz pinça para aplicar uma força à bola.', width / 2, height * 0.145);
     } else if (this.phase === 'success') {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#70f2b8';
-      ctx.font = `900 ${Math.max(36, height * 0.058)}px system-ui`;
-      ctx.fillText('LABIRINTO CONCLUÍDO!', width / 2, height * 0.12);
+      ctx.font = `900 ${Math.max(34, height * 0.052)}px system-ui`;
+      ctx.fillText('LABIRINTO CONCLUÍDO!', width / 2, height * 0.17);
       ctx.fillStyle = '#ffffff';
       ctx.font = `600 ${Math.max(17, height * 0.022)}px system-ui`;
-      ctx.fillText('Observa: sem força aplicada, a aceleração tende para zero.', width / 2, height * 0.17);
+      ctx.fillText('Observa: sem força aplicada, a aceleração tende para zero.', width / 2, height * 0.215);
     }
   }
 
@@ -421,12 +492,23 @@ export class VectorMazeExperience implements Experience {
 
   private registerCollision(): void {
     const now = performance.now();
-    const last = Number((this as unknown as { lastCollisionAt?: number }).lastCollisionAt ?? 0);
-    if (now - last > 180) {
+    if (now - this.lastCollisionAt > 180) {
       this.collisions += 1;
-      (this as unknown as { lastCollisionAt?: number }).lastCollisionAt = now;
-      this.context.audio.tone(180, 0.05, 0.012);
+      this.lastCollisionAt = now;
+      this.collisionFlashUntil = now + 900;
+      this.collisionMessagePosition = { ...this.ball };
+      this.context.audio.tone(135, 0.13, 0.065, 'square');
+      window.setTimeout(() => this.context.audio.tone(88, 0.1, 0.04, 'sawtooth'), 55);
     }
+  }
+
+  private collisionPenalty(): number {
+    return Math.max(1, Math.round(this.context.config.vectorMaze.collisionPenaltyPoints));
+  }
+
+  private liveScore(): number {
+    const timePenalty = Math.floor(this.runTime * 1.1);
+    return Math.max(0, 690 - this.collisions * this.collisionPenalty() - timePenalty);
   }
 
   private formatTime(seconds: number): string {

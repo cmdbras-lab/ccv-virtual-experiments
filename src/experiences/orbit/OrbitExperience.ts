@@ -7,7 +7,7 @@ export const orbitManifest: ExperienceManifest = {
   subtitle: 'Usa a mão para agarrar e lançar um planeta.',
   description: 'Explora gravidade, velocidade tangencial, energia e órbitas através de um lançamento controlado por gestos.',
   icon: '🪐',
-  version: '2.2.0',
+  version: '2.4.1',
   author: 'Clube Ciência Viva Abel Salazar',
 };
 

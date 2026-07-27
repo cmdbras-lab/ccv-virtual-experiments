@@ -32,6 +32,7 @@ export interface AppConfig {
   };
   branding: {
     schoolMark: string;
+    fundingMark: string;
     scienceMark: string;
     coordinator: string;
     developmentCredit: string;
@@ -84,6 +85,7 @@ export interface AppConfig {
     maximumSpeedFraction: number;
     massFactor: number;
     controlResponsePerSecond: number;
+    collisionPenaltyPoints: number;
   };
 }
 

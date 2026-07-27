@@ -12,17 +12,39 @@ jobs:
     steps:
       - name: Obter código
         uses: actions/checkout@v4
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Fixar npm compatível com o lockfile
+        run: npm install --global npm@11.9.0
+
+      - name: Configurar registo npm público
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          npm config set replace-registry-host always
+
       - name: Instalar dependências
-        run: npm ci
+        run: npm ci --ignore-scripts
+
+      - name: Preparar recursos MediaPipe
+        run: npm run setup
+
       - name: Compilar e verificar tipos
         run: npm run check
+
       - name: Teste estrutural
         run: npm run test:smoke
+
+      - name: Teste HTTP
+        run: node scripts/http-test.mjs
+
+      - name: Validar distribuição em runtime
+        run: node scripts/validate-runtime.mjs
+
       - name: Guardar versão compilada
         uses: actions/upload-artifact@v4
         with:

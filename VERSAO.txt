@@ -1,2 +1,2 @@
-Ciência em Movimento 2.2.0
+Ciência em Movimento 2.4.1
 Pacote completo com código-fonte e distribuição executável.

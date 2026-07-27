@@ -1,14 +1,17 @@
+# Publicar página 2.4.1
 name: Validar projeto
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, update/ciencia-em-movimento-2.4.1]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
 
 jobs:
   validate:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -20,6 +23,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+
+      - name: Fixar npm compatível com o lockfile
+        run: npm install --global npm@11.9.0
 
       - name: Configurar registo npm público
         run: |
@@ -54,9 +60,44 @@ jobs:
       - name: Teste estrutural
         run: npm run test:smoke
 
+      - name: Teste HTTP
+        run: node scripts/http-test.mjs
+
+      - name: Validar distribuição em runtime
+        run: node scripts/validate-runtime.mjs
+
       - name: Guardar versão compilada
         uses: actions/upload-artifact@v4
         with:
           name: ciencia-em-movimento-dist
           path: dist/
           if-no-files-found: error
+
+  deploy-pages:
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/update/ciencia-em-movimento-2.4.1'
+    needs: validate
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar conteúdo
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
