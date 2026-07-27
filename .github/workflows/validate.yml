@@ -74,7 +74,9 @@ jobs:
           if-no-files-found: error
 
   deploy-pages:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/update/ciencia-em-movimento-2.4.1'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/update/ciencia-em-movimento-2.4.1'
     needs: validate
     permissions:
       contents: read
