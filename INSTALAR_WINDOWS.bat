@@ -3,7 +3,7 @@ chcp 65001 >nul
 cd /d "%~dp0"
 echo.
 echo ==========================================
-echo  CIENCIA EM MOVIMENTO - INSTALACAO
+echo  CIENCIA EM MOVIMENTO 3.0 - VERIFICACAO
 ECHO ==========================================
 echo.
 where node >nul 2>nul
@@ -13,16 +13,19 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-call npm install
-if errorlevel 1 goto erro
-call npm run check
+if not exist "dist\index.html" (
+  echo ERRO: pasta dist em falta.
+  pause
+  exit /b 1
+)
+node scripts\validate-runtime.mjs
 if errorlevel 1 goto erro
 echo.
-echo Instalacao concluida. Use EXECUTAR_WINDOWS.bat.
+echo Pacote validado. Use EXECUTAR_WINDOWS.bat.
 pause
 exit /b 0
 :erro
 echo.
-echo Ocorreu um erro durante a instalacao.
+echo O pacote nao passou a verificacao local.
 pause
 exit /b 1
