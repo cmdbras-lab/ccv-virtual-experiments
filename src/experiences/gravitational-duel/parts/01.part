@@ -1,0 +1,120 @@
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+    this.drawStars(); this.drawMidfield(); this.drawGravityFields(); this.drawPreview(); this.drawTrail();
+    this.drawPlanets(); this.drawAsteroid(); this.drawVectors(); this.drawHud(); this.drawMessage(); this.drawLegend();
+    if (this.input && (this.phase === 'aiming' || this.phase === 'grabbed')) drawHandSkeleton(ctx, this.input, this.viewport);
+    if (this.phase === 'instructions') this.drawInstructions();
+  }
+
+  resize(viewport: Viewport): void { this.viewport = viewport; this.createStars(); if (this.asteroid.x === 0) this.spawnAsteroid(); }
+  dispose(): void { this.input = null; this.preview = []; this.trail = []; this.grabOrigin = null; }
+
+  private config(): DuelConfig { return this.context.config.gravitationalDuel; }
+  private planets(): [DuelPlanet, DuelPlanet] {
+    const { width, height } = this.viewport; const radius = this.planetRadius();
+    const mu = Math.pow(Math.min(width, height), 3) * this.config().gravityStrength;
+    return [
+      { position: { x: width * 0.16, y: height * 0.56 }, radius, mu },
+      { position: { x: width * 0.84, y: height * 0.56 }, radius, mu },
+    ];
+  }
+  private planetRadius(): number { return Math.max(36, Math.min(this.viewport.width, this.viewport.height) * 0.064); }
+  private asteroidRadius(): number { return Math.max(11, Math.min(this.viewport.width, this.viewport.height) * 0.018); }
+
+  private beginTurn(): void {
+    this.phase = 'aiming'; this.phaseElapsed = 0; this.flightElapsed = 0; this.outcome = null; this.outcomePlanet = null;
+    this.captureCandidate = null; this.captureTime = 0; this.capturedBy = null; this.preview = []; this.trail = [];
+    this.grabOrigin = null; this.velocity = { x: 0, y: 0 }; this.acceleration = { x: 0, y: 0 };
+    this.spawnAsteroid(); this.message = `${NAMES[this.active]}: agarra o asteroide e aponta para o planeta adversário.`;
+  }
+
+  private spawnAsteroid(): void {
+    const planet = this.planets()[this.active]; const direction = this.active === 0 ? 1 : -1;
+    this.asteroid = { x: planet.position.x + direction * planet.radius * 2.25, y: planet.position.y - planet.radius * 1.05 };
+  }
+
+  private clampGrab(point: Vec2): Vec2 {
+    const margin = this.planetRadius() * 0.8;
+    return { x: Math.max(margin, Math.min(this.viewport.width - margin, point.x)), y: Math.max(this.viewport.height * 0.18, Math.min(this.viewport.height * 0.82, point.y)) };
+  }
+
+  private updatePreview(): void {
+    if (!this.grabOrigin) return;
+    const raw = scale(sub(this.asteroid, this.grabOrigin), this.config().launchVelocityScale);
+    const target = this.planets()[this.active === 0 ? 1 : 0].position;
+    const targetDirection = normalise(sub(target, this.asteroid));
+    const speed = magnitude(raw); const assistance = Math.max(0, Math.min(0.5, this.config().assistanceStrength));
+    const rawDirection = normalise(raw);
+    const direction = normalise({ x: rawDirection.x * (1 - assistance) + targetDirection.x * assistance, y: rawDirection.y * (1 - assistance) + targetDirection.y * assistance });
+    this.previewVelocity = clampMagnitude(scale(direction, speed), Math.min(this.viewport.width, this.viewport.height) * 1.35);
+    this.preview = this.config().showTrajectoryPreview
+      ? predictTrajectory(this.asteroid, this.previewVelocity, this.planets(), this.config().trajectoryPreviewSeconds, this.viewport)
+      : [];
+    this.message = speed < 35 ? 'Aumenta o vetor de lançamento.' : 'Abre a mão para lançar. A trajetória tracejada já inclui a gravidade.';
+  }
+
+  private launch(): void {
+    if (magnitude(this.previewVelocity) < 35) { this.beginTurn(); this.context.audio.failure(); return; }
+    this.velocity = { ...this.previewVelocity }; this.trail = [{ ...this.asteroid }]; this.preview = [];
+    this.phase = 'flight'; this.phaseElapsed = 0; this.flightElapsed = 0; this.shots[this.active] -= 1;
+    this.context.audio.launch(); this.message = 'Observa: a velocidade é tangente; a aceleração aponta para a força resultante.';
+  }
+
+  private updateFlight(dt: number): void {
+    this.flightElapsed += dt;
+    const next = integrate(this.asteroid, this.velocity, dt, this.planets());
+    this.asteroid = next.position; this.velocity = next.velocity; this.acceleration = next.acceleration; this.force = next.force;
+    if (this.trail.length === 0 || distance(this.asteroid, this.trail[this.trail.length - 1] ?? this.asteroid) > 5) this.trail.push({ ...this.asteroid });
+    if (this.trail.length > 240) this.trail.shift();
+    const planets = this.planets();
+    for (const player of [0, 1] as const) {
+      if (distance(this.asteroid, planets[player].position) <= planets[player].radius + this.asteroidRadius() * 0.55) {
+        this.resolveImpact(player); return;
+      }
+    }
+    let best: Player | null = null; let quality = 0;
+    for (const player of [0, 1] as const) {
+      const candidate = captureQuality(this.asteroid, this.velocity, planets[player], this.config().captureRadiusMultiplier);
+      if (candidate > quality) { quality = candidate; best = player; }
+    }
+    if (best !== null && quality >= 0.66) {
+      if (this.captureCandidate === best) this.captureTime += dt; else { this.captureCandidate = best; this.captureTime = dt; }
+      if (this.captureTime >= this.config().captureHoldSeconds) { this.beginCapture(best); return; }
+    } else { this.captureCandidate = null; this.captureTime = 0; }
+    const margin = Math.max(this.viewport.width, this.viewport.height) * 0.18;
+    if (this.flightElapsed >= this.config().maximumFlightSeconds || this.asteroid.x < -margin || this.asteroid.x > this.viewport.width + margin
+      || this.asteroid.y < -margin || this.asteroid.y > this.viewport.height + margin) this.resolveMiss();
+  }
+
+  private resolveImpact(planet: Player): void {
+    this.outcomePlanet = planet; this.health[planet] = Math.max(0, this.health[planet] - 1);
+    if (planet === this.active) {
+      this.outcome = 'self-hit'; this.points[this.active] = Math.max(0, this.points[this.active] - 35);
+      this.message = `O asteroide regressou ao planeta do ${NAMES[this.active]}.`;
+    } else {
+      this.outcome = 'hit'; this.hits[this.active] += 1; this.points[this.active] += 120;
+      this.message = `Impacto no planeta adversário! A trajetória foi curvada pelos dois campos.`;
+    }
+    this.phase = 'resolution'; this.phaseElapsed = 0; this.context.audio.tone(120, 0.25, 0.08);
+  }
+
+  private resolveMiss(): void {
+    this.outcome = 'miss'; this.misses[this.active] += 1; this.points[this.active] += Math.min(35, Math.round(this.flightElapsed * 2));
+    this.message = 'O asteroide escapou. Ajusta direção e intensidade no próximo lançamento.';
+    this.phase = 'resolution'; this.phaseElapsed = 0; this.context.audio.failure();
+  }
+
+  private beginCapture(planet: Player): void {
+    const body = this.planets()[planet]; const offset = sub(this.asteroid, body.position);
+    this.capturedBy = planet; this.captureRadius = magnitude(offset); this.captureAngle = Math.atan2(offset.y, offset.x);
+    const tangentSign = offset.x * this.velocity.y - offset.y * this.velocity.x >= 0 ? 1 : -1;
+    this.captureAngularSpeed = tangentSign * Math.sqrt(body.mu / Math.pow(this.captureRadius, 3));
+    this.outcome = 'capture'; this.outcomePlanet = planet; this.phase = 'captured'; this.phaseElapsed = 0;
+    this.captures[planet] += 1; this.points[planet] += planet === this.active ? 70 : 95; this.shots[planet] += 1;
+    this.context.audio.success(); this.message = `Captura orbital pelo ${NAMES[planet]}: ganha pontos e um asteroide extra.`;
+  }
+
+  private updateCapture(dt: number): void {
+    if (this.capturedBy === null) return;
+    const body = this.planets()[this.capturedBy]; this.captureAngle += this.captureAngularSpeed * dt;
+    this.asteroid = { x: body.position.x + Math.cos(this.captureAngle) * this.captureRadius, y: body.position.y + Math.sin(this.captureAngle) * this.captureRadius };
+    this.velocity = { x: -Math.sin(this.captureAngle) * this.captureRadius * this.captureAngularSpeed, y: Math.cos(this.captureAngle) * this.captureRadius * this.captureAngularSpeed };
