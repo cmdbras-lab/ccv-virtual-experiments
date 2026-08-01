@@ -85,6 +85,21 @@ export interface AppConfig {
     massFactor: number;
     controlResponsePerSecond: number;
   };
+  gravitationalDuel: {
+    shotsPerPlayer: number;
+    planetLives: number;
+    maximumFlightSeconds: number;
+    launchVelocityScale: number;
+    gravityStrength: number;
+    trajectoryPreviewSeconds: number;
+    captureRadiusMultiplier: number;
+    captureHoldSeconds: number;
+    captureObservationSeconds: number;
+    turnPauseSeconds: number;
+    assistanceStrength: number;
+    showTrajectoryPreview: boolean;
+    showForceComponents: boolean;
+  };
 }
 
 export interface ExperienceResult {
