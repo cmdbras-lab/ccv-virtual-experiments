@@ -7,6 +7,7 @@ const dist = path.join(root, 'dist');
 const assets = path.join(dist, 'assets');
 const tsc = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
 
+execFileSync(process.execPath, [path.join(root, 'scripts', 'assemble-duel.mjs')], { cwd: root, stdio: 'inherit' });
 await rm(dist, { recursive: true, force: true });
 await mkdir(assets, { recursive: true });
 execFileSync(tsc, ['--project', 'tsconfig.build.json'], { cwd: root, stdio: 'inherit' });
@@ -22,7 +23,7 @@ await writeFile(path.join(dist, 'index.html'), `<!doctype html>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050816" />
-    <title>Ciência em Movimento 2.2</title>
+    <title>Ciência em Movimento 3.0</title>
     <link rel="stylesheet" href="./assets/styles.css" />
     <script type="module" src="./assets/main.js"></script>
   </head>
@@ -32,4 +33,4 @@ await writeFile(path.join(dist, 'index.html'), `<!doctype html>
   </body>
 </html>
 `);
-console.log('Distribuição 2.2.0 criada em dist/.');
+console.log('Distribuição 3.0.0 criada em dist/.');
