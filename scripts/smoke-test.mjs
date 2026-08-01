@@ -16,6 +16,8 @@ const required = [
   ['dist/assets/experiences/molecules/MoleculeExperience.js', 10_000],
   ['dist/assets/experiences/waves/WavesExperience.js', 7_000],
   ['dist/assets/experiences/vector-maze/VectorMazeExperience.js', 10_000],
+  ['dist/assets/experiences/gravitational-duel/GravitationalDuelExperience.js', 15_000],
+  ['dist/assets/experiences/gravitational-duel/DuelPhysics.js', 1_500],
   ['dist/mediapipe/hands/hands.js', 40_000],
   ['dist/mediapipe/hands/hands.binarypb', 100],
   ['dist/mediapipe/hands/hand_landmark_full.tflite', 5_000_000],
@@ -31,6 +33,7 @@ const html = await readFile(path.join(root, 'dist', 'index.html'), 'utf8');
 if (!html.includes('mediapipe/hands/hands.js')) throw new Error('index.html não carrega MediaPipe Hands.');
 if (!html.includes('assets/main.js')) throw new Error('index.html não carrega o módulo principal.');
 if (!html.includes('assets/styles.css')) throw new Error('index.html não carrega os estilos.');
+if (!html.includes('Ciência em Movimento 3.0')) throw new Error('Título da versão 3.0 em falta.');
 
 const config = JSON.parse(await readFile(path.join(root, 'dist', 'config.json'), 'utf8'));
 if (!config.orbit || typeof config.orbit.gravityStrength !== 'number') throw new Error('Configuração orbital inválida.');
@@ -43,6 +46,8 @@ if (!config.autonomous || config.autonomous.presenceRecentSeconds < 2) throw new
 if (!config.branding || !config.branding.developmentCredit) throw new Error('Identificação institucional em falta.');
 if (!config.vectorMaze || config.vectorMaze.massFactor < 1.5 || config.vectorMaze.maximumSpeedFraction > 0.5) throw new Error('Configuração do labirinto inválida.');
 if (!config.leaderboard || config.leaderboard.nameLength !== 3) throw new Error('Configuração do Top global inválida.');
+if (!config.gravitationalDuel || config.gravitationalDuel.shotsPerPlayer < 3 || config.gravitationalDuel.planetLives < 2) throw new Error('Configuração do duelo inválida.');
+if (config.gravitationalDuel.captureRadiusMultiplier < 2 || !config.gravitationalDuel.showTrajectoryPreview) throw new Error('Captura ou previsão do duelo inválida.');
 
 const assetsRoot = path.join(root, 'dist', 'assets');
 const jsFiles = [];
@@ -69,9 +74,9 @@ const experiencesModule = await import(pathToFileURL(path.join(assetsRoot, 'expe
 const registry = new registryModule.ExperienceRegistry();
 experiencesModule.registerExperiences(registry);
 const manifests = registry.list();
-if (manifests.length !== 5) throw new Error(`Esperadas 5 experiências; encontradas ${manifests.length}.`);
+if (manifests.length !== 6) throw new Error(`Esperadas 6 experiências; encontradas ${manifests.length}.`);
 const ids = manifests.map((manifest) => manifest.id);
-for (const expected of ['coloca-planeta-em-orbita', 'laboratorio-de-lasers', 'constroi-uma-molecula', 'domina-as-ondas', 'labirinto-vetorial']) {
+for (const expected of ['coloca-planeta-em-orbita', 'laboratorio-de-lasers', 'constroi-uma-molecula', 'domina-as-ondas', 'labirinto-vetorial', 'duelo-gravitacional']) {
   if (!ids.includes(expected)) throw new Error(`Experiência em falta: ${expected}`);
 }
 
@@ -128,5 +133,9 @@ const moleculeSource = await readFile(path.join(root, 'src', 'experiences', 'mol
 if (!moleculeSource.includes("name: 'Metano'") || !moleculeSource.includes("formula: 'CH₄'")) throw new Error('Metano não encontrado.');
 const appSource = await readFile(path.join(root, 'src', 'App.ts'), 'utf8');
 if (!appSource.includes('visitor-invite') || !appSource.includes('pedagogical-highlight')) throw new Error('Modo autónomo ou destaque pedagógico em falta.');
+const duelSource = await readFile(path.join(root, 'src', 'experiences', 'gravitational-duel', 'GravitationalDuelExperience.ts'), 'utf8');
+for (const concept of ['velocidade', 'aceleração', 'força resultante', 'Captura orbital']) {
+  if (!duelSource.includes(concept)) throw new Error(`Conceito em falta no duelo: ${concept}`);
+}
 
-console.log('Smoke test concluído: 5 experiências renderizadas, 7 cores, metano, modo autónomo, branding, modelos e importações validados.');
+console.log('Smoke test concluído: 6 experiências renderizadas, Duelo Gravitacional, vetores, captura orbital, branding, modelos e importações validados.');
