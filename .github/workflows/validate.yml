@@ -1,4 +1,4 @@
-name: Validar projeto
+name: Validar e empacotar projeto
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
       - name: Instalar dependências
         run: npm ci --ignore-scripts
 
-      - name: Preparar recursos MediaPipe
+      - name: Preparar recursos e fonte do duelo
         run: npm run setup
 
       - name: Compilar e verificar tipos
@@ -54,9 +54,31 @@ jobs:
       - name: Teste estrutural
         run: npm run test:smoke
 
+      - name: Validar pacote executável
+        run: node scripts/validate-runtime.mjs
+
+      - name: Criar pacotes da versão 3.0.0
+        run: |
+          rm -rf release /tmp/ciencia-em-movimento-full
+          mkdir -p release/execution /tmp/ciencia-em-movimento-full
+          cp -R dist scripts release/execution/
+          cp EXECUTAR_WINDOWS.bat EXECUTAR_DEMO_WINDOWS.bat INSTALAR_WINDOWS.bat README.md release/execution/
+          (cd release/execution && zip -qr ../ciencia-em-movimento-v3.0.0-execucao.zip .)
+          rsync -a --exclude='.git' --exclude='node_modules' --exclude='release' ./ /tmp/ciencia-em-movimento-full/
+          (cd /tmp/ciencia-em-movimento-full && zip -qr "$GITHUB_WORKSPACE/release/ciencia-em-movimento-v3.0.0-completo.zip" .)
+          rm -rf release/execution
+          (cd release && sha256sum *.zip > ciencia-em-movimento-v3.0.0-SHA256.txt)
+
       - name: Guardar versão compilada
         uses: actions/upload-artifact@v4
         with:
-          name: ciencia-em-movimento-dist
+          name: ciencia-em-movimento-v3.0.0-dist
           path: dist/
+          if-no-files-found: error
+
+      - name: Guardar pacotes completos
+        uses: actions/upload-artifact@v4
+        with:
+          name: ciencia-em-movimento-v3.0.0-pacotes
+          path: release/
           if-no-files-found: error
