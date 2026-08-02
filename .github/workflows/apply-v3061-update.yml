@@ -19,6 +19,11 @@ jobs:
           ref: release/v3.0.6.1-site
           fetch-depth: 0
 
+      - name: Diagnosticar blocos transferidos
+        run: |
+          wc -c .update/bundle.*
+          sha256sum .update/bundle.*
+
       - name: Reconstituir pacote de atualização
         run: |
           mkdir -p /tmp/update-v3061
