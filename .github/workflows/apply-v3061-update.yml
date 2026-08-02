@@ -26,21 +26,28 @@ jobs:
               raw_parts.append(open(path, encoding='utf-8').read())
           raw = ''.join(raw_parts)
           encoded = ''.join(re.findall(r'[A-Za-z0-9+/=]', raw))
-          payload = base64.b64decode(encoded)
           lines = [
               f'raw_chars={len(raw)}',
               f'encoded_chars={len(encoded)}',
-              f'payload_bytes={len(payload)}',
-              f'payload_sha256={hashlib.sha256(payload).hexdigest()}',
-              'expected_sha256=ebc4e0e28824c53c6dc55754a7f085db81621c53873367bd0233df039499ef83',
+              f'encoded_mod4={len(encoded) % 4}',
+              f'encoded_sha256={hashlib.sha256(encoded.encode()).hexdigest()}',
           ]
           try:
-              data = gzip.decompress(payload)
-              lines.append('gzip=ok')
-              lines.append(f'uncompressed_bytes={len(data)}')
-              lines.append(f'uncompressed_sha256={hashlib.sha256(data).hexdigest()}')
+              payload = base64.b64decode(encoded)
+              lines.extend([
+                  f'payload_bytes={len(payload)}',
+                  f'payload_sha256={hashlib.sha256(payload).hexdigest()}',
+                  'expected_sha256=ebc4e0e28824c53c6dc55754a7f085db81621c53873367bd0233df039499ef83',
+              ])
+              try:
+                  data = gzip.decompress(payload)
+                  lines.append('gzip=ok')
+                  lines.append(f'uncompressed_bytes={len(data)}')
+                  lines.append(f'uncompressed_sha256={hashlib.sha256(data).hexdigest()}')
+              except Exception as exc:
+                  lines.append(f'gzip=error:{type(exc).__name__}:{exc}')
           except Exception as exc:
-              lines.append(f'gzip=error:{type(exc).__name__}:{exc}')
+              lines.append(f'base64=error:{type(exc).__name__}:{exc}')
           open('.update/reconstruction.txt', 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
           PY
 
