@@ -1,7 +1,7 @@
 # Estado da publicação
 
-- Versão: 2.2.0
-- Release: https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/tag/v2.2.0
+- Versão: 3.0.6.1
+- Release: https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/tag/v3.0.6.1
 - Página: https://cmdbras-lab.github.io/ccv-virtual-experiments/
-- Commit: 07dd7f50f84d5d17fa1673126d35fe17f3b1f6d7
-- Publicação concluída: 2026-08-02 22:13 UTC
+- Commit: 2ae5afd5f93cd68b6b6e2a3fcd3028c924a34db5
+- Publicação concluída: 2026-08-02 22:19 UTC
