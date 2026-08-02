@@ -1,0 +1,286 @@
++    const { ctx } = this.context; const { width, height } = this.viewport; const panelWidth = width * 0.31; const panelHeight = height * 0.13;
++    for (const player of [0, 1] as const) {
++      const x = player === 0 ? width * 0.035 : width * 0.965 - panelWidth; roundedRect(ctx, x, height * 0.035, panelWidth, panelHeight, 20);
++      ctx.fillStyle = player === this.active && ['aiming', 'grabbed'].includes(this.phase) ? this.alpha(COLOURS[player], 0.22) : 'rgba(3,10,27,0.72)'; ctx.fill();
++      ctx.strokeStyle = player === this.active ? COLOURS[player] : 'rgba(190,225,255,0.2)'; ctx.lineWidth = player === this.active ? 3 : 1.5; ctx.stroke();
++      ctx.textAlign = player === 0 ? 'left' : 'right'; const tx = player === 0 ? x + panelWidth * 0.07 : x + panelWidth * 0.93;
++      ctx.fillStyle = COLOURS[player]; ctx.font = `900 ${Math.max(17, height * 0.025)}px system-ui`; ctx.fillText(NAMES[player], tx, height * 0.075);
++      ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.max(15, height * 0.021)}px system-ui`; ctx.fillText(`${this.points[player]} pts · ${this.hits[player]} impactos`, tx, height * 0.112);
++      ctx.fillStyle = 'rgba(220,240,255,0.78)'; ctx.font = `600 ${Math.max(13, height * 0.018)}px system-ui`; ctx.fillText(`Asteroides: ${this.shots[player]} · Capturas: ${this.captures[player]}`, tx, height * 0.143);
++    }
++    ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = `900 ${Math.max(22, height * 0.033)}px system-ui`; ctx.fillText('DUELO GRAVITACIONAL', width * 0.5, height * 0.075);
++    ctx.fillStyle = 'rgba(220,240,255,0.75)'; ctx.font = `650 ${Math.max(13, height * 0.018)}px system-ui`; ctx.fillText(`Turno: ${NAMES[this.active]} · ${this.difficultyLabel(this.difficulty)} · ${Math.max(0, this.turnDuration() - this.turnClock).toFixed(1)} s · F = F₁ + F₂`, width * 0.5, height * 0.112);
++  }
++  private drawMessage(): void {
++    if (this.phase === 'instructions') return; const { ctx } = this.context; const { width, height } = this.viewport; const boxWidth = Math.min(width * 0.67, 930);
++    roundedRect(ctx, width * 0.5 - boxWidth * 0.5, height * 0.835, boxWidth, height * 0.07, 17);
++    ctx.fillStyle = this.outcome === 'hit' ? 'rgba(70,210,150,0.25)' : this.phase === 'captured' ? 'rgba(255,210,90,0.23)' : 'rgba(0,7,22,0.76)'; ctx.fill();
++    ctx.strokeStyle = this.phase === 'captured' ? '#ffd66b' : this.outcome === 'hit' ? '#70f2b8' : 'rgba(150,220,255,0.32)'; ctx.lineWidth = 2; ctx.stroke();
++    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.font = `750 ${Math.max(15, height * 0.021)}px system-ui`; ctx.fillText(this.message, width * 0.5, height * 0.879);
++  }
++  private drawLegend(): void {
++    if (!['flight', 'captured', 'grabbed'].includes(this.phase)) return; const { ctx } = this.context; const { width, height } = this.viewport;
++    ctx.textAlign = 'center'; ctx.font = `700 ${Math.max(12, height * 0.016)}px system-ui`;
++    ctx.fillStyle = '#66e6ff'; ctx.fillText('→ velocidade', width * 0.38, height * 0.94);
++    ctx.fillStyle = '#ffd66b'; ctx.fillText('→ aceleração / força resultante', width * 0.59, height * 0.94);
++    ctx.fillStyle = 'rgba(225,240,255,0.68)'; ctx.fillText('a direção de a mostra como v está a mudar', width * 0.79, height * 0.94);
++  }
++  private drawInstructions(): void {
++    const { ctx } = this.context; const { width, height } = this.viewport;
++    const panelWidth = Math.min(width * 0.82, 1120); const panelHeight = Math.min(height * 0.76, 650);
++    const x = width * 0.5 - panelWidth * 0.5; const y = height * 0.12;
++    roundedRect(ctx, x, y, panelWidth, panelHeight, 28);
++    ctx.fillStyle = 'rgba(4,10,30,0.93)'; ctx.fill(); ctx.strokeStyle = 'rgba(112,226,255,0.43)'; ctx.lineWidth = 3; ctx.stroke();
++    ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = `900 ${Math.max(32, height * 0.052)}px system-ui`; ctx.fillText('☄️ Duelo gravitacional', width * 0.5, y + panelHeight * 0.12);
++    ctx.fillStyle = '#8fe7ff'; ctx.font = `700 ${Math.max(17, height * 0.025)}px system-ui`; ctx.fillText('Contorna a nave em trânsito com uma trajetória gravitacional curva', width * 0.5, y + panelHeight * 0.2);
++    const lines = [
++      '1. Na tua vez, faz pinça sobre o asteroide e mantém a mão no teu quarto de campo.',
++      '2. A linha tracejada prevê a trajetória; um ataque direto colide com a nave.',
++      '3. A nave atravessa o espaço e funciona como cronómetro do turno.',
++      '4. Abre a mão para lançar. Impactos retiram vidas; capturas orbitais dão bónus.',
++    ];
++    ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(235,247,255,0.9)'; ctx.font = `600 ${Math.max(16, height * 0.022)}px system-ui`;
++    lines.forEach((line, index) => ctx.fillText(line, x + panelWidth * 0.08, y + panelHeight * (0.3 + index * 0.075)));
++    ctx.textAlign = 'center'; ctx.fillStyle = '#ffd66b'; ctx.font = `800 ${Math.max(16, height * 0.022)}px system-ui`;
++    ctx.fillText('Escolhe a dificuldade fazendo pinça sobre um dos três botões.', width * 0.5, y + panelHeight * 0.64);
++
++    const cursor = this.input?.present ? toPixels(this.input.cursor, this.viewport) : null;
++    for (const item of this.difficultyRects()) {
++      const hovered = cursor ? pointInRect(cursor, item.rect) : false;
++      roundedRect(ctx, item.rect.x, item.rect.y, item.rect.width, item.rect.height, 18);
++      ctx.fillStyle = hovered ? 'rgba(112,242,184,0.25)' : item.value === 'assistido' ? 'rgba(85,215,255,0.14)' : item.value === 'desafio' ? 'rgba(255,125,154,0.14)' : 'rgba(255,214,107,0.14)'; ctx.fill();
++      ctx.strokeStyle = hovered ? '#70f2b8' : 'rgba(190,225,255,0.32)'; ctx.lineWidth = hovered ? 4 : 2; ctx.stroke();
++      ctx.fillStyle = '#ffffff'; ctx.font = `900 ${Math.max(18, height * 0.025)}px system-ui`; ctx.fillText(this.difficultyLabel(item.value), item.rect.x + item.rect.width / 2, item.rect.y + item.rect.height * 0.4);
++      ctx.fillStyle = 'rgba(220,240,255,0.78)'; ctx.font = `600 ${Math.max(12, height * 0.017)}px system-ui`;
++      const detail = item.value === 'assistido' ? 'mais tempo · nave menor' : item.value === 'desafio' ? 'menos tempo · nave maior' : 'equilíbrio recomendado';
++      ctx.fillText(detail, item.rect.x + item.rect.width / 2, item.rect.y + item.rect.height * 0.72);
++    }
++  }
++
++  private difficultyRects(): { value: Difficulty; rect: { x: number; y: number; width: number; height: number } }[] {
++    const { width, height } = this.viewport; const totalWidth = Math.min(width * 0.72, 900); const gap = Math.max(12, width * 0.012);
++    const buttonWidth = (totalWidth - gap * 2) / 3; const buttonHeight = Math.min(100, height * 0.115); const startX = width * 0.5 - totalWidth * 0.5; const y = height * 0.68;
++    return (['assistido', 'normal', 'desafio'] as Difficulty[]).map((value, index) => ({ value, rect: { x: startX + index * (buttonWidth + gap), y, width: buttonWidth, height: buttonHeight } }));
++  }
++
++  private difficultyAt(point: Vec2): Difficulty | null {
++    return this.difficultyRects().find((item) => pointInRect(point, item.rect))?.value ?? null;
++  }
++
++  private difficultyLabel(value: Difficulty): string {
++    return value === 'assistido' ? 'Assistido' : value === 'desafio' ? 'Desafio' : 'Normal';
++  }
++
++  private createStars(): void {
++    this.stars = Array.from({ length: 110 }, (_, index) => ({ x: this.random(index * 3 + 1), y: this.random(index * 3 + 2), size: 0.7 + this.random(index * 3 + 3) * 1.9, alpha: 0.18 + this.random(index * 5 + 4) * 0.68, phase: this.random(index * 7 + 5) * Math.PI * 2 }));
++  }
++  private random(seed: number): number { const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453; return value - Math.floor(value); }
++  private alpha(hex: string, alpha: number): string {
++    const value = Number.parseInt(hex.replace('#', ''), 16); return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${Math.max(0, Math.min(1, alpha))})`;
++  }
++}
+--- /dev/null
++++ b/docs/RELEASE_V3.0.6.1.md
+@@ -0,0 +1,41 @@
++# Ciência em Movimento 3.0.6.1
++
++Versão completa da plataforma de experiências científicas controladas por gestos, com seis módulos e correções de arranque e cache.
++
++## Nova experiência: Duelo Gravitacional
++
++- jogo para dois participantes, com jogadas alternadas;
++- dois planetas com pequenas luas em translação;
++- lançamento de asteroides com previsão de trajetória;
++- atração simultânea dos dois campos gravíticos;
++- vetores velocidade, aceleração/força resultante e componentes gravíticas;
++- nave em movimento entre os planetas, funcionando como obstáculo ao ataque direto e cronómetro visual;
++- impactos com vibração do planeta e projeção de poeiras;
++- asteroides com possibilidade de colisão, fuga ou captura orbital;
++- mão limitada à zona de lançamento do respetivo jogador.
++
++## Interface e interação
++
++- avatar corporal inicial com cabeça, tronco, braços e pernas acompanhando o participante;
++- destaque da mão e transição para a mão virtual antes da escolha do jogo;
++- menu 3 × 2 com confirmação gestual prolongada para reduzir seleções acidentais;
++- logótipos institucionais alinhados apenas no rodapé do menu;
++- textos dos cartões ajustados ao espaço disponível;
++- Top global local, sem transmissão de imagens ou dados biométricos.
++
++## Experiências incluídas
++
++1. Coloca o planeta em órbita;
++2. Laboratório de lasers;
++3. Constrói uma molécula;
++4. Luz, ondas e espetro;
++5. Labirinto vetorial;
++6. Duelo Gravitacional.
++
++## Pacotes
++
++- **execução** — recomendado para instalar e utilizar na escola;
++- **completo** — aplicação, código-fonte e documentação;
++- **SHA-256** — verificação da integridade dos ficheiros.
++
++O processamento da câmara é local. A aplicação não utiliza reconhecimento facial e não grava vídeo ou áudio.
+--- a/src/experiences/gravitational-duel/parts/00.part
++++ /dev/null
+@@ -1,120 +0,0 @@
+-import type { Experience, ExperienceContext, ExperienceManifest, Viewport } from '../../core/Experience.js';
+-import { drawHandSkeleton, roundedRect, toPixels } from '../../core/GestureGraphics.js';
+-import type { HandInput, Vec2 } from '../../core/types.js';
+-import {
+-  captureQuality, clampMagnitude, distance, gravityAt, integrate, magnitude,
+-  normalise, predictTrajectory, scale, sub, type DuelPlanet, type ForceSample,
+-} from './DuelPhysics.js';
+-
+-export const gravitationalDuelManifest: ExperienceManifest = {
+-  id: 'duelo-gravitacional',
+-  title: 'Duelo gravitacional',
+-  subtitle: 'Lança asteroides e vence o campo gravítico adversário.',
+-  description: 'Dois jogadores lançam asteroides por turnos. A gravidade curva as trajetórias, pode capturar projéteis e determina os impactos.',
+-  icon: '☄️',
+-  version: '3.0.0',
+-  author: 'Clube Ciência Viva Abel Salazar',
+-};
+-
+-type Player = 0 | 1;
+-type Phase = 'instructions' | 'aiming' | 'grabbed' | 'flight' | 'captured' | 'resolution' | 'finished';
+-type Outcome = 'hit' | 'self-hit' | 'capture' | 'miss' | null;
+-type DuelConfig = {
+-  shotsPerPlayer: number; planetLives: number; maximumFlightSeconds: number;
+-  launchVelocityScale: number; gravityStrength: number; trajectoryPreviewSeconds: number;
+-  captureRadiusMultiplier: number; captureHoldSeconds: number; captureObservationSeconds: number;
+-  turnPauseSeconds: number; assistanceStrength: number; showTrajectoryPreview: boolean;
+-  showForceComponents: boolean;
+-};
+-type Star = { x: number; y: number; size: number; alpha: number; phase: number };
+-
+-const NAMES = ['JOGADOR 1', 'JOGADOR 2'] as const;
+-const COLOURS = ['#55d7ff', '#ff7d9a'] as const;
+-
+-export class GravitationalDuelExperience implements Experience {
+-  readonly manifest = gravitationalDuelManifest;
+-  private context!: ExperienceContext;
+-  private viewport: Viewport = { width: 1, height: 1, dpr: 1 };
+-  private input: HandInput | null = null;
+-  private phase: Phase = 'instructions';
+-  private active: Player = 0;
+-  private elapsed = 0;
+-  private phaseElapsed = 0;
+-  private flightElapsed = 0;
+-  private health: [number, number] = [3, 3];
+-  private shots: [number, number] = [4, 4];
+-  private points: [number, number] = [0, 0];
+-  private hits: [number, number] = [0, 0];
+-  private captures: [number, number] = [0, 0];
+-  private misses: [number, number] = [0, 0];
+-  private asteroid: Vec2 = { x: 0, y: 0 };
+-  private velocity: Vec2 = { x: 0, y: 0 };
+-  private acceleration: Vec2 = { x: 0, y: 0 };
+-  private force: ForceSample = { total: { x: 0, y: 0 }, components: [{ x: 0, y: 0 }, { x: 0, y: 0 }] };
+-  private grabOrigin: Vec2 | null = null;
+-  private previewVelocity: Vec2 = { x: 0, y: 0 };
+-  private preview: Vec2[] = [];
+-  private trail: Vec2[] = [];
+-  private captureCandidate: Player | null = null;
+-  private captureTime = 0;
+-  private capturedBy: Player | null = null;
+-  private captureAngle = 0;
+-  private captureRadius = 0;
+-  private captureAngularSpeed = 0;
+-  private outcome: Outcome = null;
+-  private outcomePlanet: Player | null = null;
+-  private message = 'Faz pinça sobre o asteroide e abre a mão para lançar.';
+-  private stars: Star[] = [];
+-  private resultSent = false;
+-
+-  mount(context: ExperienceContext): void { this.context = context; this.createStars(); }
+-
+-  start(): void {
+-    const config = this.config();
+-    this.phase = 'instructions'; this.active = 0; this.elapsed = 0; this.phaseElapsed = 0; this.flightElapsed = 0;
+-    this.health = [config.planetLives, config.planetLives];
+-    this.shots = [config.shotsPerPlayer, config.shotsPerPlayer];
+-    this.points = [0, 0]; this.hits = [0, 0]; this.captures = [0, 0]; this.misses = [0, 0];
+-    this.captureCandidate = null; this.captureTime = 0; this.capturedBy = null;
+-    this.outcome = null; this.outcomePlanet = null; this.resultSent = false;
+-    this.message = 'Faz pinça para iniciar o duelo.'; this.spawnAsteroid();
+-  }
+-
+-  update(dtSeconds: number, input: HandInput): void {
+-    const dt = Math.min(dtSeconds, 1 / 30);
+-    this.input = input; this.elapsed += dt; this.phaseElapsed += dt;
+-    if (this.phase === 'instructions') {
+-      if (this.phaseElapsed > 0.8 && input.pinchStarted) this.beginTurn();
+-      return;
+-    }
+-    if (this.phase === 'aiming') {
+-      if (!input.present) return;
+-      const cursor = toPixels(input.cursor, this.viewport);
+-      if (input.pinch && distance(cursor, this.asteroid) < Math.max(92, this.asteroidRadius() * 5.5)) {
+-        this.phase = 'grabbed'; this.phaseElapsed = 0; this.grabOrigin = { ...this.asteroid };
+-        this.context.audio.tone(630, 0.07, 0.03);
+-      }
+-      return;
+-    }
+-    if (this.phase === 'grabbed') {
+-      if (!input.present) { this.beginTurn(); return; }
+-      this.asteroid = this.clampGrab(toPixels(input.cursor, this.viewport));
+-      this.updatePreview();
+-      if (input.pinchEnded) this.launch();
+-      return;
+-    }
+-    if (this.phase === 'flight') { this.updateFlight(dt); return; }
+-    if (this.phase === 'captured') { this.updateCapture(dt); return; }
+-    if (this.phase === 'resolution') {
+-      if (this.phaseElapsed >= this.config().turnPauseSeconds) this.nextTurnOrFinish();
+-      return;
+-    }
+-    if (this.phase === 'finished' && !this.resultSent) {
+-      this.resultSent = true; window.setTimeout(() => this.sendResult(), 800);
+-    }
+-  }
+-
+-  render(): void {
+-    const { ctx } = this.context; const { width, height } = this.viewport;
+-    const bg = ctx.createRadialGradient(width * 0.5, height * 0.48, 20, width * 0.5, height * 0.48, Math.max(width, height));
+-    bg.addColorStop(0, '#172653'); bg.addColorStop(0.48, '#081129'); bg.addColorStop(1, '#02040c');
+--- a/src/experiences/gravitational-duel/parts/01.part
++++ /dev/null
+@@ -1,120 +0,0 @@
+-    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+-    this.drawStars(); this.drawMidfield(); this.drawGravityFields(); this.drawPreview(); this.drawTrail();
+-    this.drawPlanets(); this.drawAsteroid(); this.drawVectors(); this.drawHud(); this.drawMessage(); this.drawLegend();
+-    if (this.input && (this.phase === 'aiming' || this.phase === 'grabbed')) drawHandSkeleton(ctx, this.input, this.viewport);
+-    if (this.phase === 'instructions') this.drawInstructions();
+-  }
+-
+-  resize(viewport: Viewport): void { this.viewport = viewport; this.createStars(); if (this.asteroid.x === 0) this.spawnAsteroid(); }
+-  dispose(): void { this.input = null; this.preview = []; this.trail = []; this.grabOrigin = null; }
+-
+-  private config(): DuelConfig { return this.context.config.gravitationalDuel; }
+-  private planets(): [DuelPlanet, DuelPlanet] {
+-    const { width, height } = this.viewport; const radius = this.planetRadius();
+-    const mu = Math.pow(Math.min(width, height), 3) * this.config().gravityStrength;
+-    return [
+-      { position: { x: width * 0.16, y: height * 0.56 }, radius, mu },
+-      { position: { x: width * 0.84, y: height * 0.56 }, radius, mu },
+-    ];
+-  }
+-  private planetRadius(): number { return Math.max(36, Math.min(this.viewport.width, this.viewport.height) * 0.064); }
+-  private asteroidRadius(): number { return Math.max(11, Math.min(this.viewport.width, this.viewport.height) * 0.018); }
+-
+-  private beginTurn(): void {
+-    this.phase = 'aiming'; this.phaseElapsed = 0; this.flightElapsed = 0; this.outcome = null; this.outcomePlanet = null;
+-    this.captureCandidate = null; this.captureTime = 0; this.capturedBy = null; this.preview = []; this.trail = [];
+-    this.grabOrigin = null; this.velocity = { x: 0, y: 0 }; this.acceleration = { x: 0, y: 0 };
+-    this.spawnAsteroid(); this.message = `${NAMES[this.active]}: agarra o asteroide e aponta para o planeta adversário.`;
+-  }
+-
+-  private spawnAsteroid(): void {
+-    const planet = this.planets()[this.active]; const direction = this.active === 0 ? 1 : -1;
+-    this.asteroid = { x: planet.position.x + direction * planet.radius * 2.25, y: planet.position.y - planet.radius * 1.05 };
+-  }
+-
+-  private clampGrab(point: Vec2): Vec2 {
