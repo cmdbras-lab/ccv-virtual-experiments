@@ -22,7 +22,19 @@ jobs:
       - name: Reconstituir pacote de atualização
         run: |
           mkdir -p /tmp/update-v3061
-          cat .update/bundle.* | base64 -d > /tmp/update-v3061.tar.gz
+          python - <<'PY'
+          import base64, glob, hashlib, re
+          blocks = []
+          for path in sorted(glob.glob('.update/bundle.*')):
+              blocks.append(open(path, encoding='utf-8').read())
+          encoded = ''.join(re.findall(r'[A-Za-z0-9+/=]', ''.join(blocks)))
+          payload = base64.b64decode(encoded)
+          digest = hashlib.sha256(payload).hexdigest()
+          expected = 'ebc4e0e28824c53c6dc55754a7f085db81621c53873367bd0233df039499ef83'
+          if digest != expected:
+              raise SystemExit(f'SHA-256 inesperado: {digest}')
+          open('/tmp/update-v3061.tar.gz', 'wb').write(payload)
+          PY
           tar -xzf /tmp/update-v3061.tar.gz -C /tmp/update-v3061
           test -f /tmp/update-v3061/update.patch
           test -f /tmp/update-v3061/aeas-logo.webp
