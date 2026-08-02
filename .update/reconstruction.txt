@@ -1,0 +1,5 @@
+raw_chars=84032
+encoded_chars=82994
+encoded_mod4=2
+encoded_sha256=3899c0d9645cb8384768533abade35674940556b77422e06dca492cfa84b4de1
+base64=error:Error:Incorrect padding
