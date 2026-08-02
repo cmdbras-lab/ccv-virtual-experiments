@@ -1,0 +1,228 @@
+-    const margin = this.planetRadius() * 0.8;
+-    return { x: Math.max(margin, Math.min(this.viewport.width - margin, point.x)), y: Math.max(this.viewport.height * 0.18, Math.min(this.viewport.height * 0.82, point.y)) };
+-  }
+-
+-  private updatePreview(): void {
+-    if (!this.grabOrigin) return;
+-    const raw = scale(sub(this.asteroid, this.grabOrigin), this.config().launchVelocityScale);
+-    const target = this.planets()[this.active === 0 ? 1 : 0].position;
+-    const targetDirection = normalise(sub(target, this.asteroid));
+-    const speed = magnitude(raw); const assistance = Math.max(0, Math.min(0.5, this.config().assistanceStrength));
+-    const rawDirection = normalise(raw);
+-    const direction = normalise({ x: rawDirection.x * (1 - assistance) + targetDirection.x * assistance, y: rawDirection.y * (1 - assistance) + targetDirection.y * assistance });
+-    this.previewVelocity = clampMagnitude(scale(direction, speed), Math.min(this.viewport.width, this.viewport.height) * 1.35);
+-    this.preview = this.config().showTrajectoryPreview
+-      ? predictTrajectory(this.asteroid, this.previewVelocity, this.planets(), this.config().trajectoryPreviewSeconds, this.viewport)
+-      : [];
+-    this.message = speed < 35 ? 'Aumenta o vetor de lançamento.' : 'Abre a mão para lançar. A trajetória tracejada já inclui a gravidade.';
+-  }
+-
+-  private launch(): void {
+-    if (magnitude(this.previewVelocity) < 35) { this.beginTurn(); this.context.audio.failure(); return; }
+-    this.velocity = { ...this.previewVelocity }; this.trail = [{ ...this.asteroid }]; this.preview = [];
+-    this.phase = 'flight'; this.phaseElapsed = 0; this.flightElapsed = 0; this.shots[this.active] -= 1;
+-    this.context.audio.launch(); this.message = 'Observa: a velocidade é tangente; a aceleração aponta para a força resultante.';
+-  }
+-
+-  private updateFlight(dt: number): void {
+-    this.flightElapsed += dt;
+-    const next = integrate(this.asteroid, this.velocity, dt, this.planets());
+-    this.asteroid = next.position; this.velocity = next.velocity; this.acceleration = next.acceleration; this.force = next.force;
+-    if (this.trail.length === 0 || distance(this.asteroid, this.trail[this.trail.length - 1] ?? this.asteroid) > 5) this.trail.push({ ...this.asteroid });
+-    if (this.trail.length > 240) this.trail.shift();
+-    const planets = this.planets();
+-    for (const player of [0, 1] as const) {
+-      if (distance(this.asteroid, planets[player].position) <= planets[player].radius + this.asteroidRadius() * 0.55) {
+-        this.resolveImpact(player); return;
+-      }
+-    }
+-    let best: Player | null = null; let quality = 0;
+-    for (const player of [0, 1] as const) {
+-      const candidate = captureQuality(this.asteroid, this.velocity, planets[player], this.config().captureRadiusMultiplier);
+-      if (candidate > quality) { quality = candidate; best = player; }
+-    }
+-    if (best !== null && quality >= 0.66) {
+-      if (this.captureCandidate === best) this.captureTime += dt; else { this.captureCandidate = best; this.captureTime = dt; }
+-      if (this.captureTime >= this.config().captureHoldSeconds) { this.beginCapture(best); return; }
+-    } else { this.captureCandidate = null; this.captureTime = 0; }
+-    const margin = Math.max(this.viewport.width, this.viewport.height) * 0.18;
+-    if (this.flightElapsed >= this.config().maximumFlightSeconds || this.asteroid.x < -margin || this.asteroid.x > this.viewport.width + margin
+-      || this.asteroid.y < -margin || this.asteroid.y > this.viewport.height + margin) this.resolveMiss();
+-  }
+-
+-  private resolveImpact(planet: Player): void {
+-    this.outcomePlanet = planet; this.health[planet] = Math.max(0, this.health[planet] - 1);
+-    if (planet === this.active) {
+-      this.outcome = 'self-hit'; this.points[this.active] = Math.max(0, this.points[this.active] - 35);
+-      this.message = `O asteroide regressou ao planeta do ${NAMES[this.active]}.`;
+-    } else {
+-      this.outcome = 'hit'; this.hits[this.active] += 1; this.points[this.active] += 120;
+-      this.message = `Impacto no planeta adversário! A trajetória foi curvada pelos dois campos.`;
+-    }
+-    this.phase = 'resolution'; this.phaseElapsed = 0; this.context.audio.tone(120, 0.25, 0.08);
+-  }
+-
+-  private resolveMiss(): void {
+-    this.outcome = 'miss'; this.misses[this.active] += 1; this.points[this.active] += Math.min(35, Math.round(this.flightElapsed * 2));
+-    this.message = 'O asteroide escapou. Ajusta direção e intensidade no próximo lançamento.';
+-    this.phase = 'resolution'; this.phaseElapsed = 0; this.context.audio.failure();
+-  }
+-
+-  private beginCapture(planet: Player): void {
+-    const body = this.planets()[planet]; const offset = sub(this.asteroid, body.position);
+-    this.capturedBy = planet; this.captureRadius = magnitude(offset); this.captureAngle = Math.atan2(offset.y, offset.x);
+-    const tangentSign = offset.x * this.velocity.y - offset.y * this.velocity.x >= 0 ? 1 : -1;
+-    this.captureAngularSpeed = tangentSign * Math.sqrt(body.mu / Math.pow(this.captureRadius, 3));
+-    this.outcome = 'capture'; this.outcomePlanet = planet; this.phase = 'captured'; this.phaseElapsed = 0;
+-    this.captures[planet] += 1; this.points[planet] += planet === this.active ? 70 : 95; this.shots[planet] += 1;
+-    this.context.audio.success(); this.message = `Captura orbital pelo ${NAMES[planet]}: ganha pontos e um asteroide extra.`;
+-  }
+-
+-  private updateCapture(dt: number): void {
+-    if (this.capturedBy === null) return;
+-    const body = this.planets()[this.capturedBy]; this.captureAngle += this.captureAngularSpeed * dt;
+-    this.asteroid = { x: body.position.x + Math.cos(this.captureAngle) * this.captureRadius, y: body.position.y + Math.sin(this.captureAngle) * this.captureRadius };
+-    this.velocity = { x: -Math.sin(this.captureAngle) * this.captureRadius * this.captureAngularSpeed, y: Math.cos(this.captureAngle) * this.captureRadius * this.captureAngularSpeed };
+--- a/src/experiences/gravitational-duel/parts/02.part
++++ /dev/null
+@@ -1,120 +0,0 @@
+-    this.force = gravityAt(this.asteroid, this.planets()); this.acceleration = this.force.total;
+-    this.trail.push({ ...this.asteroid }); if (this.trail.length > 220) this.trail.shift();
+-    if (this.phaseElapsed >= this.config().captureObservationSeconds) { this.phase = 'resolution'; this.phaseElapsed = 0; }
+-  }
+-
+-  private nextTurnOrFinish(): void {
+-    if (this.health[0] <= 0 || this.health[1] <= 0 || (this.shots[0] <= 0 && this.shots[1] <= 0)) { this.finish(); return; }
+-    const other = (this.active === 0 ? 1 : 0) as Player;
+-    if (this.shots[other] > 0) this.active = other;
+-    else if (this.shots[this.active] <= 0) { this.finish(); return; }
+-    this.beginTurn();
+-  }
+-
+-  private finish(): void { this.phase = 'finished'; this.phaseElapsed = 0; this.message = this.winnerText(); this.context.audio.success(); }
+-  private winner(): Player | null {
+-    if (this.health[0] !== this.health[1]) return this.health[0] > this.health[1] ? 0 : 1;
+-    if (this.points[0] !== this.points[1]) return this.points[0] > this.points[1] ? 0 : 1;
+-    return null;
+-  }
+-  private winnerText(): string { const winner = this.winner(); return winner === null ? 'Empate gravitacional!' : `${NAMES[winner]} venceu o duelo!`; }
+-
+-  private sendResult(): void {
+-    const winner = this.winner(); const winningPoints = Math.max(this.points[0], this.points[1]);
+-    const livesQuality = Math.max(this.health[0], this.health[1]) / Math.max(1, this.config().planetLives);
+-    const score = Math.min(1000, Math.round(300 + winningPoints * 2.2 + livesQuality * 170 + (winner === null ? 0 : 80)));
+-    this.context.complete({
+-      score, title: this.winnerText(),
+-      explanation: 'A força gravítica resultante altera continuamente o vetor velocidade. Por isso o asteroide descreve uma trajetória curva e pode colidir, escapar ou ficar ligado numa órbita.',
+-      details: [
+-        `${NAMES[0]}: ${this.points[0]} pts · ${this.hits[0]} impactos · ${this.captures[0]} capturas`,
+-        `${NAMES[1]}: ${this.points[1]} pts · ${this.hits[1]} impactos · ${this.captures[1]} capturas`,
+-        `Vidas finais: ${this.health[0]} — ${this.health[1]} · Lançamentos falhados: ${this.misses[0] + this.misses[1]}`,
+-      ],
+-    });
+-  }
+-
+-  private drawStars(): void {
+-    const { ctx } = this.context; const { width, height } = this.viewport;
+-    for (const star of this.stars) {
+-      ctx.globalAlpha = star.alpha * (0.78 + Math.sin(this.elapsed * 1.8 + star.phase) * 0.22);
+-      ctx.fillStyle = '#dff5ff'; ctx.beginPath(); ctx.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2); ctx.fill();
+-    }
+-    ctx.globalAlpha = 1;
+-  }
+-  private drawMidfield(): void {
+-    const { ctx } = this.context; const { width, height } = this.viewport;
+-    ctx.save(); ctx.setLineDash([7, 12]); ctx.strokeStyle = 'rgba(180,225,255,0.16)'; ctx.lineWidth = 2;
+-    ctx.beginPath(); ctx.moveTo(width * 0.5, height * 0.2); ctx.lineTo(width * 0.5, height * 0.86); ctx.stroke(); ctx.restore();
+-  }
+-  private drawGravityFields(): void {
+-    const { ctx } = this.context;
+-    this.planets().forEach((planet, player) => {
+-      for (let ring = 1; ring <= 3; ring += 1) {
+-        ctx.strokeStyle = this.alpha(COLOURS[player as Player], 0.13 / ring); ctx.lineWidth = 2; ctx.beginPath();
+-        ctx.arc(planet.position.x, planet.position.y, planet.radius * (1.55 + ring * 0.72), 0, Math.PI * 2); ctx.stroke();
+-      }
+-    });
+-  }
+-  private drawPlanets(): void {
+-    const { ctx } = this.context;
+-    this.planets().forEach((planet, player) => {
+-      const gradient = ctx.createRadialGradient(planet.position.x - planet.radius * 0.35, planet.position.y - planet.radius * 0.38, 4, planet.position.x, planet.position.y, planet.radius);
+-      gradient.addColorStop(0, '#ffffff'); gradient.addColorStop(0.18, COLOURS[player as Player]); gradient.addColorStop(1, player === 0 ? '#084b75' : '#7b1839');
+-      ctx.save(); ctx.fillStyle = gradient; ctx.shadowColor = COLOURS[player as Player]; ctx.shadowBlur = 30; ctx.beginPath();
+-      ctx.arc(planet.position.x, planet.position.y, planet.radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+-      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.font = `800 ${Math.max(13, this.viewport.height * 0.018)}px system-ui`;
+-      ctx.fillText(`${'❤'.repeat(this.health[player as Player])}${'♡'.repeat(Math.max(0, this.config().planetLives - this.health[player as Player]))}`, planet.position.x, planet.position.y + planet.radius + 28);
+-    });
+-  }
+-  private drawAsteroid(): void {
+-    const { ctx } = this.context; const radius = this.asteroidRadius();
+-    ctx.save(); ctx.translate(this.asteroid.x, this.asteroid.y); ctx.rotate(this.elapsed * 1.7); ctx.fillStyle = '#9e8d7b'; ctx.strokeStyle = '#e8d4bd'; ctx.lineWidth = 2;
+-    ctx.shadowColor = '#ffbd72'; ctx.shadowBlur = this.phase === 'flight' ? 20 : 9; ctx.beginPath();
+-    for (let index = 0; index < 10; index += 1) { const angle = index / 10 * Math.PI * 2; const r = radius * (0.78 + ((index * 37) % 7) / 22); const x = Math.cos(angle) * r; const y = Math.sin(angle) * r; if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+-    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+-  }
+-  private drawTrail(): void {
+-    if (this.trail.length < 2) return; const { ctx } = this.context; ctx.save(); ctx.strokeStyle = this.alpha(COLOURS[this.active], 0.56); ctx.lineWidth = 3;
+-    ctx.beginPath(); this.trail.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)); ctx.stroke(); ctx.restore();
+-  }
+-  private drawPreview(): void {
+-    if (this.preview.length < 2) return; const { ctx } = this.context; ctx.save(); ctx.setLineDash([8, 8]); ctx.strokeStyle = '#70f2b8'; ctx.lineWidth = 3;
+-    ctx.beginPath(); this.preview.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)); ctx.stroke(); ctx.restore();
+-    if (this.grabOrigin) this.drawArrow(this.grabOrigin, this.previewVelocity, '#70f2b8', 'lançamento', 0.18);
+-  }
+-  private drawVectors(): void {
+-    if (!['flight', 'captured'].includes(this.phase)) return;
+-    this.drawArrow(this.asteroid, this.velocity, '#66e6ff', 'v', 0.19);
+-    this.drawArrow(this.asteroid, this.acceleration, '#ffd66b', 'a / F', 0.032);
+-    if (this.config().showForceComponents) {
+-      this.drawArrow(this.asteroid, this.force.components[0], this.alpha(COLOURS[0], 0.8), 'F₁', 0.024, true);
+-      this.drawArrow(this.asteroid, this.force.components[1], this.alpha(COLOURS[1], 0.8), 'F₂', 0.024, true);
+-    }
+-  }
+-  private drawArrow(origin: Vec2, vector: Vec2, colour: string, label: string, scaleFactor: number, dashed = false): void {
+-    const { ctx } = this.context; const maximum = Math.min(this.viewport.width, this.viewport.height) * 0.17;
+-    const display = clampMagnitude(scale(vector, scaleFactor), maximum); if (magnitude(display) < 5) return;
+-    const end = { x: origin.x + display.x, y: origin.y + display.y }; const unit = normalise(display); const head = 13;
+-    ctx.save(); if (dashed) ctx.setLineDash([5, 5]); ctx.strokeStyle = colour; ctx.fillStyle = colour; ctx.lineWidth = dashed ? 2 : 4; ctx.shadowColor = colour; ctx.shadowBlur = 10;
+-    ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(end.x, end.y); ctx.stroke(); ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(end.x, end.y);
+-    ctx.lineTo(end.x - unit.x * head - unit.y * head * 0.55, end.y - unit.y * head + unit.x * head * 0.55);
+-    ctx.lineTo(end.x - unit.x * head + unit.y * head * 0.55, end.y - unit.y * head - unit.x * head * 0.55); ctx.closePath(); ctx.fill();
+-    ctx.shadowBlur = 0; ctx.font = `800 ${Math.max(13, this.viewport.height * 0.018)}px system-ui`; ctx.fillText(label, end.x + 7, end.y - 7); ctx.restore();
+-  }
+-  private drawHud(): void {
+-    const { ctx } = this.context; const { width, height } = this.viewport; const panelWidth = width * 0.31; const panelHeight = height * 0.13;
+-    for (const player of [0, 1] as const) {
+-      const x = player === 0 ? width * 0.035 : width * 0.965 - panelWidth; roundedRect(ctx, x, height * 0.035, panelWidth, panelHeight, 20);
+-      ctx.fillStyle = player === this.active && ['aiming', 'grabbed'].includes(this.phase) ? this.alpha(COLOURS[player], 0.22) : 'rgba(3,10,27,0.72)'; ctx.fill();
+-      ctx.strokeStyle = player === this.active ? COLOURS[player] : 'rgba(190,225,255,0.2)'; ctx.lineWidth = player === this.active ? 3 : 1.5; ctx.stroke();
+-      ctx.textAlign = player === 0 ? 'left' : 'right'; const tx = player === 0 ? x + panelWidth * 0.07 : x + panelWidth * 0.93;
+-      ctx.fillStyle = COLOURS[player]; ctx.font = `900 ${Math.max(17, height * 0.025)}px system-ui`; ctx.fillText(NAMES[player], tx, height * 0.075);
+-      ctx.fillStyle = '#ffffff'; ctx.font = `800 ${Math.max(15, height * 0.021)}px system-ui`; ctx.fillText(`${this.points[player]} pts · ${this.hits[player]} impactos`, tx, height * 0.112);
+-      ctx.fillStyle = 'rgba(220,240,255,0.78)'; ctx.font = `600 ${Math.max(13, height * 0.018)}px system-ui`; ctx.fillText(`Asteroides: ${this.shots[player]} · Capturas: ${this.captures[player]}`, tx, height * 0.143);
+-    }
+-    ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = `900 ${Math.max(22, height * 0.033)}px system-ui`; ctx.fillText('DUELO GRAVITACIONAL', width * 0.5, height * 0.075);
+-    ctx.fillStyle = 'rgba(220,240,255,0.75)'; ctx.font = `650 ${Math.max(13, height * 0.018)}px system-ui`; ctx.fillText(`Turno: ${NAMES[this.active]} · F = F₁ + F₂`, width * 0.5, height * 0.112);
+-  }
+-  private drawMessage(): void {
+-    if (this.phase === 'instructions') return; const { ctx } = this.context; const { width, height } = this.viewport; const boxWidth = Math.min(width * 0.67, 930);
+--- a/src/experiences/gravitational-duel/parts/03.part
++++ /dev/null
+@@ -1,38 +0,0 @@
+-    roundedRect(ctx, width * 0.5 - boxWidth * 0.5, height * 0.835, boxWidth, height * 0.07, 17);
+-    ctx.fillStyle = this.outcome === 'hit' ? 'rgba(70,210,150,0.25)' : this.phase === 'captured' ? 'rgba(255,210,90,0.23)' : 'rgba(0,7,22,0.76)'; ctx.fill();
+-    ctx.strokeStyle = this.phase === 'captured' ? '#ffd66b' : this.outcome === 'hit' ? '#70f2b8' : 'rgba(150,220,255,0.32)'; ctx.lineWidth = 2; ctx.stroke();
+-    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.font = `750 ${Math.max(15, height * 0.021)}px system-ui`; ctx.fillText(this.message, width * 0.5, height * 0.879);
+-  }
+-  private drawLegend(): void {
+-    if (!['flight', 'captured', 'grabbed'].includes(this.phase)) return; const { ctx } = this.context; const { width, height } = this.viewport;
+-    ctx.textAlign = 'center'; ctx.font = `700 ${Math.max(12, height * 0.016)}px system-ui`;
+-    ctx.fillStyle = '#66e6ff'; ctx.fillText('→ velocidade', width * 0.38, height * 0.94);
+-    ctx.fillStyle = '#ffd66b'; ctx.fillText('→ aceleração / força resultante', width * 0.59, height * 0.94);
+-    ctx.fillStyle = 'rgba(225,240,255,0.68)'; ctx.fillText('a direção de a mostra como v está a mudar', width * 0.79, height * 0.94);
+-  }
+-  private drawInstructions(): void {
+-    const { ctx } = this.context; const { width, height } = this.viewport; const panelWidth = Math.min(width * 0.78, 1050); const panelHeight = Math.min(height * 0.7, 620);
+-    const x = width * 0.5 - panelWidth * 0.5; const y = height * 0.17; roundedRect(ctx, x, y, panelWidth, panelHeight, 28);
+-    ctx.fillStyle = 'rgba(4,10,30,0.92)'; ctx.fill(); ctx.strokeStyle = 'rgba(112,226,255,0.43)'; ctx.lineWidth = 3; ctx.stroke();
+-    ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = `900 ${Math.max(34, height * 0.055)}px system-ui`; ctx.fillText('☄️ Duelo gravitacional', width * 0.5, y + panelHeight * 0.14);
