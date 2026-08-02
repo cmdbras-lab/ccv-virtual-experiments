@@ -1,5 +1,7 @@
 # Ciência em Movimento 3.0
 
+> **Versão 3.0.6.1** — correção urgente do arranque: impede a mistura de ficheiros em cache entre versões, força a atualização de `config.json` e torna o branding compatível com configurações anteriores.
+
 Plataforma modular de experiências científicas controladas por gestos, preparada para funcionar autonomamente num televisor ou ecrã da escola.
 
 ## Experiências incluídas
@@ -14,6 +16,10 @@ Plataforma modular de experiências científicas controladas por gestos, prepara
 ## Duelo gravitacional
 
 - dois jogadores e uma única webcam, com jogadas alternadas para evitar trocas de mão;
+- três dificuldades: **Assistido**, **Normal** e **Desafio**;
+- nave em trânsito entre os planetas, usada como obstáculo e cronómetro do turno;
+- ataques diretos tendem a colidir com a nave, incentivando trajetórias curvas;
+- colisões com a nave produzem uma explosão visual com partículas;
 - quatro asteroides iniciais e três vidas por jogador;
 - previsão tracejada da trajetória antes do lançamento;
 - atração simultânea dos dois planetas;
@@ -33,7 +39,15 @@ Os parâmetros do duelo podem ser ajustados em `public/config.json`, na secção
 - não utiliza reconhecimento facial nem identifica pessoas;
 - não grava imagens, vídeo ou som.
 
-A deteção de presença é apenas um sinal local de movimento de baixa resolução, combinado com a deteção da mão. Não são conservadas imagens.
+No menu de entrada, o MediaPipe Pose identifica localmente pontos articulares do corpo para desenhar um avatar. O rastreio corporal é desligado quando começa uma experiência e fica ativa apenas a deteção da mão. Não são guardadas imagens, vídeo, som ou coordenadas corporais.
+
+## Rastreio corporal local
+
+- utiliza **MediaPipe Pose** com o modelo leve, incluído no pacote;
+- funciona sem Internet depois de descompactado;
+- acompanha cabeça, ombros, cotovelos, pulsos, ancas, joelhos e tornozelos;
+- é executado apenas no menu de entrada, reduzindo a carga durante os jogos;
+- se a pose não estiver disponível, mantém-se um avatar aproximado baseado no movimento.
 
 ## Menu gestual
 
@@ -41,11 +55,11 @@ A escolha exige manter a mão dentro de um cartão durante **3,5 segundos**. Exi
 
 ## Identificação institucional
 
-O menu e os restantes ecrãs apresentam marcas compactas e o rodapé:
+O menu apresenta no rodapé os logótipos oficiais fornecidos e a frase:
 
-> Coordenador CCV — Prof. Carlos Brás · Desenvolvido por Prof. Carlos Brás com recurso a AI
+> Desenvolvido pelo coordenador do Clube Ciência Viva Abel Salazar - professor Carlos Brás - julho 2026
 
-Os SVG em `public/branding/` são marcas tipográficas locais simplificadas. Podem ser substituídos pelos ficheiros oficiais, conservando os mesmos nomes, sem alterar o código.
+Os logótipos não surgem dentro dos jogos, preservando o espaço útil do ecrã.
 
 ## Top global e privacidade
 
@@ -113,7 +127,7 @@ npm run test:smoke
 npm run dev
 ```
 
-A arquitetura está em `src/core/`, `src/experiences/` e `src/experiences/index.ts`. O comando `npm run assemble` recompõe o ficheiro do Duelo Gravitacional a partir das partes-fonte antes da compilação. Consulte `docs/CRIAR_NOVA_EXPERIENCIA.md`.
+A arquitetura está em `src/core/`, `src/experiences/` e `src/experiences/index.ts`. O comando `npm run assemble` verifica o ficheiro do Duelo Gravitacional antes da compilação. Consulte `docs/CRIAR_NOVA_EXPERIENCIA.md`.
 
 ## Recursos MediaPipe no repositório
 

@@ -12,6 +12,9 @@ const required = [
   'dist/mediapipe/hands/hands.js',
   'dist/mediapipe/hands/hand_landmark_full.tflite',
   'dist/mediapipe/hands/hands_solution_simd_wasm_bin.wasm',
+  'dist/mediapipe/pose/pose.js',
+  'dist/mediapipe/pose/pose_landmark_lite.tflite',
+  'dist/mediapipe/pose/pose_solution_simd_wasm_bin.wasm',
 ];
 
 for (const relative of required) await stat(path.join(root, relative));
@@ -20,5 +23,6 @@ if (!config.gravitationalDuel || config.gravitationalDuel.shotsPerPlayer < 3) {
   throw new Error('Configuração do Duelo Gravitacional em falta ou inválida.');
 }
 const html = await readFile(path.join(root, 'dist', 'index.html'), 'utf8');
-if (!html.includes('Ciência em Movimento 3.0')) throw new Error('Versão 3.0 não identificada no executável.');
-console.log('Validação local concluída: executável 3.0 e Duelo Gravitacional disponíveis.');
+if (!html.includes('Ciência em Movimento 3.0.6')) throw new Error('Versão 3.0.6 não identificada no executável.');
+if (!html.includes('mediapipe/pose/pose.js')) throw new Error('MediaPipe Pose não está incluído no executável.');
+console.log('Validação local concluída: v3.0.6, Pose offline e Duelo Gravitacional disponíveis.');

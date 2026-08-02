@@ -3,7 +3,7 @@ chcp 65001 >nul
 cd /d "%~dp0"
 echo.
 echo ==========================================
-echo  CIENCIA EM MOVIMENTO 3.0 - VERIFICACAO
+echo  CIENCIA EM MOVIMENTO 3.0.6 - VERIFICACAO
 ECHO ==========================================
 echo.
 where node >nul 2>nul

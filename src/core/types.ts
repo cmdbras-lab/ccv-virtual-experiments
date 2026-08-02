@@ -33,6 +33,7 @@ export interface AppConfig {
   branding: {
     schoolMark: string;
     scienceMark: string;
+    supportMark?: string;
     coordinator: string;
     developmentCredit: string;
   };

@@ -1,2 +1,2 @@
-Ciência em Movimento 2.2.0
-Pacote completo com código-fonte e distribuição executável.
+Ciência em Movimento 3.0.6.1
+Correção de arranque e cache da versão 3.0.6.

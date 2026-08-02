@@ -22,6 +22,9 @@ const required = [
   ['dist/mediapipe/hands/hands.binarypb', 100],
   ['dist/mediapipe/hands/hand_landmark_full.tflite', 5_000_000],
   ['dist/mediapipe/hands/hands_solution_simd_wasm_bin.wasm', 5_000_000],
+  ['dist/mediapipe/pose/pose.js', 40_000],
+  ['dist/mediapipe/pose/pose_landmark_lite.tflite', 2_000_000],
+  ['dist/mediapipe/pose/pose_solution_simd_wasm_bin.wasm', 5_000_000],
 ];
 
 for (const [relative, minimumSize] of required) {
@@ -31,6 +34,7 @@ for (const [relative, minimumSize] of required) {
 
 const html = await readFile(path.join(root, 'dist', 'index.html'), 'utf8');
 if (!html.includes('mediapipe/hands/hands.js')) throw new Error('index.html não carrega MediaPipe Hands.');
+if (!html.includes('mediapipe/pose/pose.js')) throw new Error('index.html não carrega MediaPipe Pose.');
 if (!html.includes('assets/main.js')) throw new Error('index.html não carrega o módulo principal.');
 if (!html.includes('assets/styles.css')) throw new Error('index.html não carrega os estilos.');
 if (!html.includes('Ciência em Movimento 3.0')) throw new Error('Título da versão 3.0 em falta.');
@@ -43,7 +47,7 @@ if (!config.molecules || config.molecules.successObservationSeconds < 6) throw n
 if (!config.laser || config.laser.quizDwellSeconds < 1) throw new Error('Configuração do questionário inválida.');
 if (!config.waves || typeof config.waves.targetAmplitude !== 'number') throw new Error('Configuração das ondas inválida.');
 if (!config.autonomous || config.autonomous.presenceRecentSeconds < 2) throw new Error('Modo autónomo inválido.');
-if (!config.branding || !config.branding.developmentCredit) throw new Error('Identificação institucional em falta.');
+if (!config.branding || (!config.branding.coordinator && !config.branding.developmentCredit)) throw new Error('Identificação institucional em falta.');
 if (!config.vectorMaze || config.vectorMaze.massFactor < 1.5 || config.vectorMaze.maximumSpeedFraction > 0.5) throw new Error('Configuração do labirinto inválida.');
 if (!config.leaderboard || config.leaderboard.nameLength !== 3) throw new Error('Configuração do Top global inválida.');
 if (!config.gravitationalDuel || config.gravitationalDuel.shotsPerPlayer < 3 || config.gravitationalDuel.planetLives < 2) throw new Error('Configuração do duelo inválida.');
@@ -133,9 +137,10 @@ const moleculeSource = await readFile(path.join(root, 'src', 'experiences', 'mol
 if (!moleculeSource.includes("name: 'Metano'") || !moleculeSource.includes("formula: 'CH₄'")) throw new Error('Metano não encontrado.');
 const appSource = await readFile(path.join(root, 'src', 'App.ts'), 'utf8');
 if (!appSource.includes('visitor-invite') || !appSource.includes('pedagogical-highlight')) throw new Error('Modo autónomo ou destaque pedagógico em falta.');
+if (!appSource.includes("figure.source === 'pose'") || !appSource.includes('setPoseEnabled(true)')) throw new Error('Avatar corporal com pose em falta.');
 const duelSource = await readFile(path.join(root, 'src', 'experiences', 'gravitational-duel', 'GravitationalDuelExperience.ts'), 'utf8');
-for (const concept of ['velocidade', 'aceleração', 'força resultante', 'Captura orbital']) {
+for (const concept of ['velocidade', 'aceleração', 'força resultante', 'Captura orbital', 'difficultyRects', 'spawnShuttleExplosion']) {
   if (!duelSource.includes(concept)) throw new Error(`Conceito em falta no duelo: ${concept}`);
 }
 
-console.log('Smoke test concluído: 6 experiências renderizadas, Duelo Gravitacional, vetores, captura orbital, branding, modelos e importações validados.');
+console.log('Smoke test concluído: 6 experiências, Pose local, avatar corporal, dificuldades e nave-cronómetro validados.');

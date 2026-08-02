@@ -11,10 +11,11 @@
     "voiceEnabled": true
   },
   "branding": {
-    "schoolMark": "branding/aeas-mark.svg",
-    "scienceMark": "branding/ciencia-viva-mark.svg",
-    "coordinator": "Coordenador CCV — Prof. Carlos Brás",
-    "developmentCredit": "Desenvolvido por Prof. Carlos Brás com recurso a AI"
+    "schoolMark": "branding/aeas-logo.svg",
+    "scienceMark": "branding/ccvne-logo.svg",
+    "coordinator": "Desenvolvido pelo coordenador do Clube Ciência Viva Abel Salazar - professor Carlos Brás - julho 2026",
+    "developmentCredit": "",
+    "supportMark": "branding/prr-nextgen-logo.svg"
   },
   "menu": {
     "dwellSeconds": 3.5,

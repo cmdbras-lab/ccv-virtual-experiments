@@ -3,6 +3,7 @@
 Este projeto utiliza os seguintes componentes:
 
 - **MediaPipe Hands**, Google — licença Apache-2.0.
+- **MediaPipe Pose**, Google — licença Apache-2.0.
 - **Vite** — licença MIT, utilizado apenas para desenvolvimento e compilação.
 - **TypeScript** — licença Apache-2.0, utilizado apenas para desenvolvimento e verificação.
 

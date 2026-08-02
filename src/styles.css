@@ -102,17 +102,28 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
 
 .brand-marks {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
+}
+.brand-mark-frame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 .brand-marks img {
   display: block;
   width: auto;
-  height: clamp(28px, 4vh, 44px);
-  max-width: min(150px, 22vw);
+  height: clamp(24px, 3.6vh, 40px);
+  max-width: min(190px, 26vw);
   object-fit: contain;
 }
+.brand-mark-support img { max-width: min(220px, 32vw); }
 .permission-card > .brand-marks { margin-bottom: 12px; }
 
 .branding-footer {
@@ -120,22 +131,29 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
   left: 18px;
   right: 18px;
   bottom: 10px;
-  min-height: 48px;
+  min-height: 60px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 6px 16px;
+  gap: 10px 14px;
+  padding: 8px 16px;
   border: 1px solid rgba(150, 214, 255, 0.14);
   border-radius: 18px;
-  background: rgba(2, 7, 20, 0.72);
-  color: rgba(225, 243, 255, 0.76);
-  font-size: clamp(0.68rem, 1.1vw, 0.88rem);
-  letter-spacing: 0.02em;
+  background: rgba(2, 7, 20, 0.82);
+  color: rgba(225, 243, 255, 0.9);
+  font-size: clamp(0.6rem, 0.95vw, 0.82rem);
+  letter-spacing: 0.01em;
+  text-align: center;
   backdrop-filter: blur(12px);
 }
-.branding-footer .brand-marks { gap: 8px; flex: 0 0 auto; }
-.branding-footer .brand-marks img { height: clamp(22px, 3vh, 32px); max-width: 100px; }
+.branding-footer .brand-marks { gap: 6px; flex: 0 1 auto; }
+.branding-footer .brand-marks img { height: clamp(20px, 2.7vh, 28px); max-width: 150px; }
+.branding-footer span { flex: 1 1 320px; }
+.menu-footer { justify-content: space-between; gap: 10px 16px; }
+.menu-footer span { flex: 1 1 auto; text-align: left; }
+.menu-footer .brand-marks { flex-wrap: nowrap; justify-content: flex-end; }
+.menu-footer .brand-marks img { height: clamp(18px, 2.4vh, 24px); max-width: 130px; }
 
 .visitor-invite {
   position: absolute;
@@ -187,7 +205,9 @@ p { font-size: clamp(1rem, 1.55vw, 1.25rem); line-height: 1.55; color: rgba(232,
 .result-card { margin-bottom: 52px; max-height: calc(100vh - 82px); }
 
 @media (max-width: 760px) {
-  .branding-footer { left: 8px; right: 8px; gap: 8px; padding: 5px 8px; }
+  .branding-footer { left: 8px; right: 8px; gap: 8px; padding: 6px 8px; }
   .branding-footer span { max-width: 70vw; text-align: center; }
+  .menu-footer { justify-content: center; }
+  .menu-footer .brand-marks { flex-wrap: wrap; justify-content: center; }
   .visitor-invite { top: 49%; }
 }

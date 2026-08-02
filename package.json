@@ -1,6 +1,6 @@
 {
   "name": "ciencia-em-movimento",
-  "version": "3.0.0",
+  "version": "3.0.6",
   "private": true,
   "type": "module",
   "description": "Plataforma modular de experiências científicas controladas por gestos, com seis jogos, duelo para dois jogadores, menu seguro e ranking global.",
@@ -16,7 +16,8 @@
     "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
-    "@mediapipe/hands": "0.4.1675469240"
+    "@mediapipe/hands": "0.4.1675469240",
+    "@mediapipe/pose": "0.5.1675469404"
   },
   "devDependencies": {
     "typescript": "7.0.2",

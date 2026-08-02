@@ -10,6 +10,15 @@ import { registerExperiences } from './experiences/index.js';
 
 type AppState = 'permission' | 'loading' | 'menu' | 'playing' | 'result' | 'name-entry' | 'leaderboard' | 'error';
 type Rect = { x: number; y: number; width: number; height: number };
+type PresencePoseJoint = 'nose' | 'leftShoulder' | 'rightShoulder' | 'leftElbow' | 'rightElbow' | 'leftWrist' | 'rightWrist' | 'leftHip' | 'rightHip' | 'leftKnee' | 'rightKnee' | 'leftAnkle' | 'rightAnkle';
+type PresenceFigure = {
+  center: Vec2;
+  spread: Vec2;
+  leftHand?: Vec2;
+  rightHand?: Vec2;
+  joints?: Partial<Record<PresencePoseJoint, Vec2>>;
+  source?: 'pose' | 'motion' | 'mouse';
+};
 type NameKey = { value: string; label: string; rect: Rect };
 
 export class App {
@@ -71,6 +80,7 @@ export class App {
   }
 
   private renderPermission(): void {
+    this.tracker.setPoseEnabled(false);
     this.state = 'permission';
     this.overlay.innerHTML = `
       <div class="permission-card">
@@ -85,7 +95,6 @@ export class App {
         <button id="demo-mode" class="secondary-button">Testar com o rato</button>
         <p class="small-note">Na primeira utilização, autoriza a câmara no navegador.</p>
       </div>
-      ${this.brandingFooterHtml()}
     `;
     this.overlay.querySelector<HTMLButtonElement>('#enable-camera')?.addEventListener('click', () => void this.enableCamera());
     this.overlay.querySelector<HTMLButtonElement>('#fullscreen')?.addEventListener('click', () => void document.documentElement.requestFullscreen());
@@ -97,7 +106,7 @@ export class App {
 
   private async enableCamera(automatic = false): Promise<void> {
     this.state = 'loading';
-    this.overlay.innerHTML = `<div class="status-card"><div class="spinner"></div><h2>A preparar as experiências…</h2><p>A iniciar a câmara e a deteção local da mão.</p></div>${this.brandingFooterHtml()}`;
+    this.overlay.innerHTML = `<div class="status-card"><div class="spinner"></div><h2>A preparar as experiências…</h2><p>A iniciar a câmara e a deteção local da mão.</p></div>`;
     try {
       await this.tracker.startCamera();
       this.showMenu();
@@ -114,13 +123,13 @@ export class App {
           <p>${this.escape(message)}</p>
           <p>Confirma a autorização da câmara e verifica se outra aplicação a está a utilizar.</p>
           <button id="retry" class="primary-button">Tentar novamente</button>
-        </div>
-        ${this.brandingFooterHtml()}`;
+        </div>`;
       this.overlay.querySelector<HTMLButtonElement>('#retry')?.addEventListener('click', () => this.renderPermission());
     }
   }
 
   private showMenu(): void {
+    this.tracker.setPoseEnabled(true);
     this.state = 'menu';
     this.result = null;
     this.pendingQualifyingScore = false;
@@ -144,13 +153,13 @@ export class App {
   }
 
   private startExperience(id: string): void {
+    this.tracker.setPoseEnabled(false);
     this.currentExperienceId = id;
     this.state = 'playing';
     this.result = null;
     this.overlay.innerHTML = `
       <div class="privacy-chip">● processamento local · sem gravação</div>
       <div class="help-chip">B: voltar ao menu · R: reiniciar · ESC: sair do ecrã inteiro</div>
-      ${this.brandingFooterHtml()}
     `;
     const experience = this.registry.create(id);
     this.runner.mount(experience);
@@ -186,7 +195,6 @@ export class App {
         </div>
         <button id="menu" class="primary-button">Voltar ao menu</button>
       </div>
-      ${this.brandingFooterHtml()}
     `;
     this.overlay.querySelector<HTMLButtonElement>('#menu')?.addEventListener('click', () => this.showMenu());
   }
@@ -202,7 +210,6 @@ export class App {
     this.overlay.innerHTML = `
       <div class="privacy-chip">🏆 nome-relâmpago: três iniciais</div>
       <div class="help-chip">Aponta e mantém 0,6 s · ou faz pinça</div>
-      ${this.brandingFooterHtml()}
     `;
   }
 
@@ -216,7 +223,6 @@ export class App {
     this.overlay.innerHTML = `
       <div class="privacy-chip">🏆 Top global atualizado</div>
       <div class="help-chip">Faz pinça para regressar ao menu</div>
-      ${this.brandingFooterHtml()}
     `;
     this.contextToneSuccess();
   }
@@ -321,7 +327,11 @@ export class App {
 
     for (const card of this.menuCards()) this.drawMenuCard(card.manifest, card.rect, card.manifest.id === this.menuHoverId, now);
     this.drawGlobalTopPanel();
-    drawHandSkeleton(ctx, input, viewport);
+    if (!input.present) {
+      const figure = this.tracker.getPresenceFigure(this.config.autonomous.presenceRecentSeconds);
+      if (figure) this.drawPresenceFigure(figure, now);
+    }
+    if (input.present) drawHandSkeleton(ctx, input, viewport);
     if (input.present && this.menuHoverId) {
       const cursor = toPixels(input.cursor, viewport);
       drawDwellRing(ctx, cursor, (now - this.menuHoverStartedAt) / (this.config.menu.dwellSeconds * 1000), 32);
@@ -341,22 +351,38 @@ export class App {
     ctx.stroke();
     ctx.shadowBlur = 0;
 
+    ctx.beginPath();
+    roundedRect(ctx, rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4, 22);
+    ctx.clip();
+
+    const paddingX = rect.width * 0.07;
+    const contentX = rect.x + paddingX;
+    const contentWidth = rect.width - paddingX * 2;
+
     ctx.fillStyle = '#ffffff';
-    ctx.font = `${Math.max(42, rect.height * 0.29)}px system-ui`;
+    ctx.font = `${Math.max(34, rect.height * 0.24)}px system-ui`;
     ctx.textAlign = 'left';
-    ctx.fillText(manifest.icon, rect.x + rect.width * 0.07, rect.y + rect.height * 0.39);
-    ctx.font = `800 ${Math.max(21, rect.height * 0.13)}px system-ui`;
-    ctx.fillText(manifest.title, rect.x + rect.width * 0.07, rect.y + rect.height * 0.64);
+    ctx.fillText(manifest.icon, contentX, rect.y + rect.height * 0.28);
+
+    const titleFontPx = Math.max(16, Math.min(24, rect.height * 0.1));
+    const subtitleFontPx = Math.max(11, Math.min(15, rect.height * 0.055));
+    const titleLineHeight = Math.round(titleFontPx * 1.15);
+    const subtitleLineHeight = Math.round(subtitleFontPx * 1.18);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 ${titleFontPx}px system-ui`;
+    this.drawWrappedTextLimited(manifest.title, contentX, rect.y + rect.height * 0.45, contentWidth, titleLineHeight, 2);
+
     ctx.fillStyle = 'rgba(215,238,250,0.76)';
-    ctx.font = `500 ${Math.max(13, rect.height * 0.075)}px system-ui`;
-    this.wrapText(manifest.subtitle, rect.x + rect.width * 0.07, rect.y + rect.height * 0.78, rect.width * 0.86, rect.height * 0.1);
+    ctx.font = `500 ${subtitleFontPx}px system-ui`;
+    this.drawWrappedTextLimited(manifest.subtitle, contentX, rect.y + rect.height * 0.72, contentWidth, subtitleLineHeight, 3);
 
     if (hovered) {
       const progress = Math.min(1, (now - this.menuHoverStartedAt) / (this.config.menu.dwellSeconds * 1000));
       ctx.fillStyle = 'rgba(255,255,255,0.13)';
-      ctx.fillRect(rect.x + rect.width * 0.07, rect.y + rect.height * 0.9, rect.width * 0.86, 10);
+      ctx.fillRect(contentX, rect.y + rect.height * 0.9, contentWidth, 10);
       ctx.fillStyle = '#72f2b5';
-      ctx.fillRect(rect.x + rect.width * 0.07, rect.y + rect.height * 0.9, rect.width * 0.86 * progress, 10);
+      ctx.fillRect(contentX, rect.y + rect.height * 0.9, contentWidth * progress, 10);
     }
     ctx.restore();
   }
@@ -650,17 +676,131 @@ export class App {
   }
 
   private brandMarksHtml(): string {
-    return `<div class="brand-marks">
-      <img src="${this.escape(this.config.branding.schoolMark)}" alt="Agrupamento de Escolas Abel Salazar">
-      <img src="${this.escape(this.config.branding.scienceMark)}" alt="Clube Ciência Viva">
+    const marks = [
+      { src: this.config.branding?.schoolMark ?? '', alt: 'Agrupamento de Escolas Abel Salazar', className: 'brand-mark brand-mark-school' },
+      { src: this.config.branding?.scienceMark ?? '', alt: 'Clubes Ciência Viva na Escola', className: 'brand-mark brand-mark-science' },
+      ...(this.config.branding?.supportMark
+        ? [{ src: this.config.branding.supportMark, alt: 'PRR - Financiado pela União Europeia NextGenerationEU', className: 'brand-mark brand-mark-support' }]
+        : []),
+    ];
+    return `<div class="brand-marks">${marks.filter((mark) => Boolean(mark.src)).map((mark) => `
+      <span class="brand-mark-frame ${mark.className}"><img src="${this.escape(mark.src)}" alt="${this.escape(mark.alt)}"></span>`).join('')}
     </div>`;
   }
 
   private brandingFooterHtml(): string {
-    return `<footer class="branding-footer">
+    const extraCredit = this.config.branding?.developmentCredit ? ` · ${this.escape(this.config.branding.developmentCredit)}` : '';
+    return `<footer class="branding-footer menu-footer">
+      <span>${this.escape(this.config.branding?.coordinator ?? 'Desenvolvido pelo Clube Ciência Viva Abel Salazar')}${extraCredit}</span>
       ${this.brandMarksHtml()}
-      <span>${this.escape(this.config.branding.coordinator)} · ${this.escape(this.config.branding.developmentCredit)}</span>
     </footer>`;
+  }
+
+  private drawPresenceFigure(figure: PresenceFigure, now: number): void {
+    const { ctx } = this.runner;
+    const viewport = this.viewport();
+    const toPixel = (point: Vec2): Vec2 => ({
+      x: Math.max(24, Math.min(viewport.width - 24, point.x * viewport.width)),
+      y: Math.max(30, Math.min(viewport.height - 30, point.y * viewport.height)),
+    });
+    const cx = figure.center.x * viewport.width;
+    const cy = figure.center.y * viewport.height;
+    const bodyHeight = Math.max(130, Math.min(520, figure.spread.y * viewport.height));
+    const shoulderWidth = Math.max(78, Math.min(250, figure.spread.x * viewport.width * 0.62));
+    const joints = figure.joints ?? {};
+
+    const fallback = {
+      nose: { x: cx, y: cy - bodyHeight * 0.42 },
+      leftShoulder: { x: cx - shoulderWidth * 0.5, y: cy - bodyHeight * 0.19 },
+      rightShoulder: { x: cx + shoulderWidth * 0.5, y: cy - bodyHeight * 0.19 },
+      leftElbow: { x: cx - shoulderWidth * 0.78, y: cy - bodyHeight * 0.03 },
+      rightElbow: { x: cx + shoulderWidth * 0.78, y: cy - bodyHeight * 0.03 },
+      leftWrist: figure.leftHand ? toPixel(figure.leftHand) : { x: cx - shoulderWidth, y: cy + bodyHeight * 0.08 },
+      rightWrist: figure.rightHand ? toPixel(figure.rightHand) : { x: cx + shoulderWidth, y: cy + bodyHeight * 0.08 },
+      leftHip: { x: cx - shoulderWidth * 0.3, y: cy + bodyHeight * 0.13 },
+      rightHip: { x: cx + shoulderWidth * 0.3, y: cy + bodyHeight * 0.13 },
+      leftKnee: { x: cx - shoulderWidth * 0.36, y: cy + bodyHeight * 0.34 },
+      rightKnee: { x: cx + shoulderWidth * 0.36, y: cy + bodyHeight * 0.34 },
+      leftAnkle: { x: cx - shoulderWidth * 0.46, y: cy + bodyHeight * 0.52 },
+      rightAnkle: { x: cx + shoulderWidth * 0.46, y: cy + bodyHeight * 0.52 },
+    };
+    const point = (name: PresencePoseJoint): Vec2 => joints[name] ? toPixel(joints[name] as Vec2) : fallback[name];
+    const nose = point('nose');
+    const leftShoulder = point('leftShoulder');
+    const rightShoulder = point('rightShoulder');
+    const leftElbow = point('leftElbow');
+    const rightElbow = point('rightElbow');
+    const leftWrist = point('leftWrist');
+    const rightWrist = point('rightWrist');
+    const leftHip = point('leftHip');
+    const rightHip = point('rightHip');
+    const leftKnee = point('leftKnee');
+    const rightKnee = point('rightKnee');
+    const leftAnkle = point('leftAnkle');
+    const rightAnkle = point('rightAnkle');
+    const shoulderSpan = Math.hypot(leftShoulder.x - rightShoulder.x, leftShoulder.y - rightShoulder.y);
+    const headRadius = Math.max(17, Math.min(44, shoulderSpan * 0.28));
+    const pulse = 0.86 + 0.14 * Math.sin(now / 240);
+    const hintHand = leftWrist.y < rightWrist.y ? leftWrist : rightWrist;
+
+    ctx.save();
+    ctx.strokeStyle = figure.source === 'pose' ? 'rgba(122, 236, 255, 0.96)' : 'rgba(120, 227, 255, 0.88)';
+    ctx.lineWidth = Math.max(4, bodyHeight * 0.018);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.fillStyle = 'rgba(120, 227, 255, 0.15)';
+
+    ctx.beginPath();
+    ctx.arc(nose.x, nose.y, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    const segment = (a: Vec2, b: Vec2): void => { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); };
+    ctx.beginPath();
+    segment(leftShoulder, rightShoulder);
+    segment(leftShoulder, leftElbow);
+    segment(leftElbow, leftWrist);
+    segment(rightShoulder, rightElbow);
+    segment(rightElbow, rightWrist);
+    segment(leftShoulder, leftHip);
+    segment(rightShoulder, rightHip);
+    segment(leftHip, rightHip);
+    segment(leftHip, leftKnee);
+    segment(leftKnee, leftAnkle);
+    segment(rightHip, rightKnee);
+    segment(rightKnee, rightAnkle);
+    ctx.stroke();
+
+    if (figure.source === 'pose') {
+      ctx.fillStyle = 'rgba(214, 250, 255, 0.92)';
+      for (const joint of [leftShoulder, rightShoulder, leftElbow, rightElbow, leftWrist, rightWrist, leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle]) {
+        ctx.beginPath(); ctx.arc(joint.x, joint.y, Math.max(3.5, bodyHeight * 0.009), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    ctx.strokeStyle = 'rgba(114, 242, 181, 0.99)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(hintHand.x, hintHand.y, Math.max(28, bodyHeight * 0.1) * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const bubbleWidth = Math.min(360, viewport.width * 0.32);
+    const bubbleHeight = 72;
+    const bubbleX = Math.max(20, Math.min(viewport.width - bubbleWidth - 20, hintHand.x - bubbleWidth * 0.52));
+    const bubbleY = Math.max(92, hintHand.y - bubbleHeight - 30);
+    roundedRect(ctx, bubbleX, bubbleY, bubbleWidth, bubbleHeight, 18);
+    ctx.fillStyle = 'rgba(2, 7, 20, 0.86)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(114, 242, 181, 0.46)';
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.font = `800 ${Math.max(15, viewport.height * 0.023)}px system-ui`;
+    ctx.fillText(figure.source === 'pose' ? 'O teu corpo acompanha-te no ecrã' : 'Levanta uma mão para jogar', bubbleX + bubbleWidth / 2, bubbleY + 28);
+    ctx.fillStyle = 'rgba(215,238,250,0.84)';
+    ctx.font = `500 ${Math.max(12, viewport.height * 0.018)}px system-ui`;
+    ctx.fillText('Levanta a mão, faz pinça e aponta para um jogo.', bubbleX + bubbleWidth / 2, bubbleY + 51);
+    ctx.restore();
   }
 
   private viewport(): Viewport {
@@ -687,20 +827,38 @@ export class App {
     }).join('');
   }
 
-  private wrapText(text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
+  private drawWrappedTextLimited(text: string, x: number, y: number, maxWidth: number, lineHeight: number, maxLines: number): void {
+    const lines = this.wrapTextLines(text, maxWidth);
+    const visibleLines = lines.slice(0, Math.max(1, maxLines));
+    if (lines.length > maxLines && visibleLines.length > 0) {
+      let lastLine = visibleLines[visibleLines.length - 1] ?? '';
+      while (lastLine.length > 1 && this.runner.ctx.measureText(`${lastLine}…`).width > maxWidth) lastLine = lastLine.slice(0, -1).trimEnd();
+      visibleLines[visibleLines.length - 1] = `${lastLine}…`;
+    }
+    visibleLines.forEach((line, index) => this.runner.ctx.fillText(line, x, y + index * lineHeight));
+  }
+
+  private wrapTextLines(text: string, maxWidth: number): string[] {
     const { ctx } = this.runner;
-    const words = text.split(' ');
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
     let line = '';
-    let lineIndex = 0;
     for (const word of words) {
       const candidate = line ? `${line} ${word}` : word;
       if (ctx.measureText(candidate).width > maxWidth && line) {
-        ctx.fillText(line, x, y + lineIndex * lineHeight);
+        lines.push(line);
         line = word;
-        lineIndex += 1;
-      } else line = candidate;
+      } else {
+        line = candidate;
+      }
     }
-    if (line) ctx.fillText(line, x, y + lineIndex * lineHeight);
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  private wrapText(text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
+    const lines = this.wrapTextLines(text, maxWidth);
+    lines.forEach((line, index) => this.runner.ctx.fillText(line, x, y + index * lineHeight));
   }
 
   private contextToneSuccess(): void {
@@ -725,8 +883,8 @@ export class App {
     if (key === 'f') void document.documentElement.requestFullscreen();
   };
 
-  private escape(value: string): string {
-    return value.replace(/[&<>'"]/g, (character) => ({
+  private escape(value: unknown): string {
+    return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',

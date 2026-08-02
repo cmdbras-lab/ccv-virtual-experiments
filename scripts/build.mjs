@@ -23,14 +23,15 @@ await writeFile(path.join(dist, 'index.html'), `<!doctype html>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050816" />
-    <title>Ciência em Movimento 3.0</title>
+    <title>Ciência em Movimento 3.0.6</title>
     <link rel="stylesheet" href="./assets/styles.css" />
     <script type="module" src="./assets/main.js"></script>
   </head>
   <body>
     <main id="app" aria-live="polite"></main>
+    <script src="./mediapipe/pose/pose.js"></script>
     <script src="./mediapipe/hands/hands.js"></script>
   </body>
 </html>
 `);
-console.log('Distribuição 3.0.0 criada em dist/.');
+console.log('Distribuição 3.0.6 criada em dist/.');

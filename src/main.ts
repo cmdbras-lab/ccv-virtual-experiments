@@ -3,7 +3,7 @@ import { App } from './App.js';
 import type { AppConfig } from './core/types.js';
 
 async function loadConfig(): Promise<AppConfig> {
-  const response = await fetch(new URL('config.json', document.baseURI));
+  const response = await fetch(new URL('config.json?v=3.0.6.1', document.baseURI), { cache: 'no-store' });
   if (!response.ok) throw new Error(`Não foi possível carregar config.json (${response.status}).`);
   return response.json() as Promise<AppConfig>;
 }

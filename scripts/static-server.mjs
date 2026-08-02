@@ -27,7 +27,7 @@ const server = createServer(async (request, response) => {
     const content = await readFile(filePath);
     response.writeHead(200, {
       'Content-Type': mime.get(path.extname(filePath)) || 'application/octet-stream',
-      'Cache-Control': path.basename(filePath) === 'index.html' ? 'no-cache' : 'public, max-age=86400',
+      'Cache-Control': ['.html', '.js', '.css', '.json', '.map'].includes(path.extname(filePath)) ? 'no-store, max-age=0' : 'public, max-age=86400, immutable',
       'Content-Length': String(content.length),
     });
     response.end(content);
