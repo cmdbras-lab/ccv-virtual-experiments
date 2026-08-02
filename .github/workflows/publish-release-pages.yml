@@ -1,0 +1,152 @@
+name: Publicar Release e página
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: publicar-ciencia-em-movimento
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Compilar e validar
+        run: |
+          npm run build
+          node scripts/smoke-test.mjs
+          node scripts/validate-runtime.mjs
+
+      - name: Determinar versão
+        id: meta
+        shell: bash
+        run: |
+          VERSION="$(sed -n '1s/^Ciência em Movimento //p' VERSAO.txt | tr -d '\r')"
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Criar pacotes ZIP
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          mkdir -p release
+          zip -qr "release/ciencia-em-movimento-v${VERSION}-execucao.zip" \
+            scripts INSTALAR_WINDOWS.bat EXECUTAR_DEMO_WINDOWS.bat EXECUTAR_WINDOWS.bat README.md dist
+          zip -qr "release/ciencia-em-movimento-v${VERSION}-completo.zip" . \
+            -x '.git/*' 'node_modules/*' 'release/*'
+          (
+            cd release
+            sha256sum \
+              "ciencia-em-movimento-v${VERSION}-execucao.zip" \
+              "ciencia-em-movimento-v${VERSION}-completo.zip" \
+              > "ciencia-em-movimento-v${VERSION}-SHA256.txt"
+          )
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pacotes-${{ steps.meta.outputs.version }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pacotes-${{ needs.package.outputs.version }}
+          path: release
+
+      - name: Criar ou atualizar GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.package.outputs.tag }}
+          name: Ciência em Movimento ${{ needs.package.outputs.version }}
+          body_path: docs/RELEASE_V3.0.6.1.md
+          make_latest: true
+          files: release/*
+          fail_on_unmatched_files: true
+
+  pages:
+    needs: package
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar página
+        shell: bash
+        run: |
+          test -f site/index.html
+          test -f site/styles.css
+          test -f site/site.js
+          touch site/.nojekyll
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publicar GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  publication-status:
+    needs: [package, release, pages]
+    if: ${{ always() && needs.release.result == 'success' && needs.pages.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Registar publicação confirmada
+        shell: bash
+        run: |
+          mkdir -p docs
+          cat > docs/PUBLICATION_STATUS.md <<EOF
+          # Estado da publicação
+
+          - Versão: ${{ needs.package.outputs.version }}
+          - Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.package.outputs.tag }}
+          - Página: https://${{ github.repository_owner }}.github.io/ccv-virtual-experiments/
+          - Commit: ${{ github.sha }}
+          - Publicação concluída: $(date -u '+%Y-%m-%d %H:%M UTC')
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/PUBLICATION_STATUS.md
+          git commit -m "Registar publicação da versão ${{ needs.package.outputs.version }}" || exit 0
+          git push
