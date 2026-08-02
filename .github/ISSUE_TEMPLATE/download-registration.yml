@@ -1,0 +1,76 @@
+name: Registo voluntário de utilização
+description: Registe, de forma voluntária, a utilização do Ciência em Movimento na sua escola, clube ou atividade.
+title: "[Registo de utilização] "
+labels:
+  - registo-utilizacao
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Registo voluntário
+        Este formulário é opcional. O download da aplicação não depende do preenchimento e não é necessário indicar dados pessoais desnecessários.
+
+  - type: input
+    id: entidade
+    attributes:
+      label: Escola, clube, organização ou projeto
+      description: Indique a entidade que utilizará a aplicação.
+      placeholder: Ex.: Clube Ciência Viva da Escola ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pais
+    attributes:
+      label: País
+      options:
+        - Portugal
+        - Espanha
+        - Brasil
+        - Outro país
+    validations:
+      required: true
+
+  - type: input
+    id: localidade
+    attributes:
+      label: Localidade
+      placeholder: Ex.: Porto
+
+  - type: dropdown
+    id: contexto
+    attributes:
+      label: Contexto principal de utilização
+      options:
+        - Escola — aulas
+        - Escola — Clube Ciência Viva
+        - Escola — exposição ou evento
+        - Museu ou centro de ciência
+        - Formação de professores
+        - Utilização particular
+        - Outro
+    validations:
+      required: true
+
+  - type: textarea
+    id: utilizacao
+    attributes:
+      label: Utilização prevista
+      description: Descreva resumidamente onde e como pretende utilizar o software.
+      placeholder: Ex.: ecrã interativo à entrada da escola, feira de ciência, atividade de Física...
+    validations:
+      required: true
+
+  - type: input
+    id: contacto
+    attributes:
+      label: Nome ou contacto institucional — opcional
+      description: Preencha apenas se aceitar ser contactado sobre o projeto. Evite indicar dados pessoais que não sejam necessários.
+
+  - type: checkboxes
+    id: consentimento
+    attributes:
+      label: Confirmação
+      options:
+        - label: Compreendo que este registo é público no GitHub e que o download não depende do seu preenchimento.
+          required: true
