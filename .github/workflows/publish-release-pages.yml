@@ -3,6 +3,11 @@ name: Publicar Release e página
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/PUBLICATION_STATUS.md'
+      - '.update/**'
+      - '.github/workflows/apply-v3061-final.yml'
+      - '.github/workflows/publish-release-pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -16,7 +21,6 @@ concurrency:
 
 jobs:
   package:
-    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.meta.outputs.version }}
