@@ -64,5 +64,20 @@
     "maximumSpeedFraction": 0.4,
     "massFactor": 2.15,
     "controlResponsePerSecond": 2.35
+  },
+  "gravitationalDuel": {
+    "shotsPerPlayer": 4,
+    "planetLives": 3,
+    "maximumFlightSeconds": 14,
+    "launchVelocityScale": 1.9,
+    "gravityStrength": 0.0105,
+    "trajectoryPreviewSeconds": 5.6,
+    "captureRadiusMultiplier": 3.4,
+    "captureHoldSeconds": 0.8,
+    "captureObservationSeconds": 2.8,
+    "turnPauseSeconds": 1.7,
+    "assistanceStrength": 0.18,
+    "showTrajectoryPreview": true,
+    "showForceComponents": true
   }
 }

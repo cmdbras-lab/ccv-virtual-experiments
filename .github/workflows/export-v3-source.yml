@@ -1,0 +1,25 @@
+name: Exportar fonte v3
+
+on:
+  push:
+    branches: [tools/export-v3-source]
+  pull_request:
+    branches: [main]
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar arquivo da fonte
+        run: |
+          rm -rf /tmp/source-export
+          mkdir -p /tmp/source-export
+          rsync -a --exclude='.git' --exclude='node_modules' ./ /tmp/source-export/
+          (cd /tmp/source-export && zip -qr "$GITHUB_WORKSPACE/source-v3.zip" .)
+      - name: Guardar fonte
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-v3
+          path: source-v3.zip
+          if-no-files-found: error
