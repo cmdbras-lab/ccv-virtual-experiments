@@ -1,0 +1,51 @@
+name: Aplicar atualização 3.0.6.1
+
+on:
+  push:
+    branches: [release/v3.0.6.1-site]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstituir pacote de atualização
+        run: |
+          mkdir -p /tmp/update-v3061
+          cat .update/bundle.* | base64 -d > /tmp/update-v3061.tar.gz
+          tar -xzf /tmp/update-v3061.tar.gz -C /tmp/update-v3061
+          test -f /tmp/update-v3061/update.patch
+          test -f /tmp/update-v3061/aeas-logo.webp
+          test -f /tmp/update-v3061/ccvne-logo.webp
+          test -f /tmp/update-v3061/prr-nextgen-logo.webp
+
+      - name: Aplicar versão, página e automatizações
+        run: |
+          git apply --check -p1 /tmp/update-v3061/update.patch
+          git apply -p1 /tmp/update-v3061/update.patch
+          mkdir -p public/branding site/assets
+          cp /tmp/update-v3061/aeas-logo.webp public/branding/
+          cp /tmp/update-v3061/ccvne-logo.webp public/branding/
+          cp /tmp/update-v3061/prr-nextgen-logo.webp public/branding/
+          cp /tmp/update-v3061/aeas-logo.webp site/assets/
+          cp /tmp/update-v3061/ccvne-logo.webp site/assets/
+          cp /tmp/update-v3061/prr-nextgen-logo.webp site/assets/
+          rm -rf .update
+          rm -f .github/workflows/apply-v3061-update.yml
+          rm -f .github/workflows/export-v3-source.yml
+          rm -f EXPORT_TRIGGER*.txt EXPORT_TRIGGER*.md
+
+      - name: Publicar alterações na ramificação
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Publicar Ciência em Movimento 3.0.6.1 e página de divulgação"
+          git push
