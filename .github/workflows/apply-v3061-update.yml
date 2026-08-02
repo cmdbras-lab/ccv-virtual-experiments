@@ -48,8 +48,8 @@ jobs:
 
       - name: Aplicar versão, página e automatizações
         run: |
-          git apply --check -p1 /tmp/update-v3061/update.patch
-          git apply -p1 /tmp/update-v3061/update.patch
+          patch --dry-run -p1 < /tmp/update-v3061/update.patch
+          patch -p1 < /tmp/update-v3061/update.patch
           mkdir -p public/branding site/assets
           cp /tmp/update-v3061/aeas-logo.webp public/branding/
           cp /tmp/update-v3061/ccvne-logo.webp public/branding/
