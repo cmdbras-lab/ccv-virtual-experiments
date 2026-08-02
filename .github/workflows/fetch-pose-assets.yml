@@ -1,0 +1,38 @@
+name: Exportar recursos MediaPipe Pose
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Obter MediaPipe Pose
+        run: |
+          mkdir -p pose-assets
+          npm pack @mediapipe/pose@0.5.1675469404
+          tar -xzf mediapipe-pose-0.5.1675469404.tgz
+          cp package/pose.js pose-assets/
+          cp package/pose_landmark_lite.tflite pose-assets/
+          cp package/pose_solution_packed_assets.data pose-assets/
+          cp package/pose_solution_packed_assets_loader.js pose-assets/
+          cp package/pose_solution_simd_wasm_bin.data pose-assets/
+          cp package/pose_solution_simd_wasm_bin.js pose-assets/
+          cp package/pose_solution_simd_wasm_bin.wasm pose-assets/
+          cp package/pose_solution_wasm_bin.js pose-assets/
+          cp package/pose_solution_wasm_bin.wasm pose-assets/
+          cp package/pose_web.binarypb pose-assets/
+          cp package/index.d.ts pose-assets/
+          cp package/package.json pose-assets/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mediapipe-pose-0.5.1675469404
+          path: pose-assets
+          retention-days: 7
