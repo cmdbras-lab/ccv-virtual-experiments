@@ -3,6 +3,8 @@ name: Exportar fonte v3
 on:
   push:
     branches: [tools/export-v3-source]
+  pull_request:
+    branches: [main]
 
 jobs:
   export:
