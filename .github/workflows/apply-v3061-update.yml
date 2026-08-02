@@ -1,8 +1,6 @@
-name: Aplicar atualização 3.0.6.1
+name: Diagnosticar atualização 3.0.6.1
 
 on:
-  push:
-    branches: [release/v3.0.6.1-site]
   pull_request:
     branches: [main]
 
@@ -10,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  apply:
+  diagnose:
     if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
@@ -19,53 +17,37 @@ jobs:
           ref: release/v3.0.6.1-site
           fetch-depth: 0
 
-      - name: Diagnosticar blocos transferidos
+      - name: Diagnosticar reconstrução
         run: |
-          wc -c .update/bundle.*
-          sha256sum .update/bundle.*
-
-      - name: Reconstituir pacote de atualização
-        run: |
-          mkdir -p /tmp/update-v3061
           python - <<'PY'
-          import base64, glob, hashlib, re
-          blocks = []
+          import base64, glob, gzip, hashlib, re
+          raw_parts = []
           for path in sorted(glob.glob('.update/bundle.*')):
-              blocks.append(open(path, encoding='utf-8').read())
-          encoded = ''.join(re.findall(r'[A-Za-z0-9+/=]', ''.join(blocks)))
+              raw_parts.append(open(path, encoding='utf-8').read())
+          raw = ''.join(raw_parts)
+          encoded = ''.join(re.findall(r'[A-Za-z0-9+/=]', raw))
           payload = base64.b64decode(encoded)
-          digest = hashlib.sha256(payload).hexdigest()
-          expected = 'ebc4e0e28824c53c6dc55754a7f085db81621c53873367bd0233df039499ef83'
-          if digest != expected:
-              raise SystemExit(f'SHA-256 inesperado: {digest}')
-          open('/tmp/update-v3061.tar.gz', 'wb').write(payload)
+          lines = [
+              f'raw_chars={len(raw)}',
+              f'encoded_chars={len(encoded)}',
+              f'payload_bytes={len(payload)}',
+              f'payload_sha256={hashlib.sha256(payload).hexdigest()}',
+              'expected_sha256=ebc4e0e28824c53c6dc55754a7f085db81621c53873367bd0233df039499ef83',
+          ]
+          try:
+              data = gzip.decompress(payload)
+              lines.append('gzip=ok')
+              lines.append(f'uncompressed_bytes={len(data)}')
+              lines.append(f'uncompressed_sha256={hashlib.sha256(data).hexdigest()}')
+          except Exception as exc:
+              lines.append(f'gzip=error:{type(exc).__name__}:{exc}')
+          open('.update/reconstruction.txt', 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
           PY
-          tar -xzf /tmp/update-v3061.tar.gz -C /tmp/update-v3061
-          test -f /tmp/update-v3061/update.patch
-          test -f /tmp/update-v3061/aeas-logo.webp
-          test -f /tmp/update-v3061/ccvne-logo.webp
-          test -f /tmp/update-v3061/prr-nextgen-logo.webp
 
-      - name: Aplicar versão, página e automatizações
-        run: |
-          tail -n +2 /tmp/update-v3061/update.patch | patch --dry-run -p1
-          tail -n +2 /tmp/update-v3061/update.patch | patch -p1
-          mkdir -p public/branding site/assets
-          cp /tmp/update-v3061/aeas-logo.webp public/branding/
-          cp /tmp/update-v3061/ccvne-logo.webp public/branding/
-          cp /tmp/update-v3061/prr-nextgen-logo.webp public/branding/
-          cp /tmp/update-v3061/aeas-logo.webp site/assets/
-          cp /tmp/update-v3061/ccvne-logo.webp site/assets/
-          cp /tmp/update-v3061/prr-nextgen-logo.webp site/assets/
-          rm -rf .update
-          rm -f .github/workflows/apply-v3061-update.yml
-          rm -f .github/workflows/export-v3-source.yml
-          rm -f EXPORT_TRIGGER*.txt EXPORT_TRIGGER*.md
-
-      - name: Publicar alterações na ramificação
+      - name: Guardar diagnóstico
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Publicar Ciência em Movimento 3.0.6.1 e página de divulgação"
+          git add .update/reconstruction.txt
+          git commit -m "Registar diagnóstico da reconstrução"
           git push origin HEAD:release/v3.0.6.1-site
