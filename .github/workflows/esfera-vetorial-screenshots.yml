@@ -1,0 +1,110 @@
+name: Screenshots Esfera Vetorial
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Apply compatibility patch when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/patch_v021.py') != '' }}
+        working-directory: apps/esfera-vetorial/android
+        run: python3 patch_v021.py
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.1'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Enable KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          fi
+
+      - name: Prepare legacy signing key when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/test-signing.keystore.b64') != '' }}
+        working-directory: apps/esfera-vetorial/android
+        run: base64 -d test-signing.keystore.b64 > test-signing.keystore
+
+      - name: Build app
+        working-directory: apps/esfera-vetorial/android
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Capture app screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            mkdir -p apps/esfera-vetorial/android/screenshots-ci
+            adb shell wm size 1080x1920
+            adb shell wm density 420
+            adb install -r apps/esfera-vetorial/android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n pt.esferavetorial.app/.MainActivity
+            sleep 3
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/01-menu.png
+
+            adb shell input tap 540 1120
+            sleep 2
+            adb shell input motionevent DOWN 160 700
+            adb shell input motionevent MOVE 280 630
+            adb shell input motionevent MOVE 400 820
+            adb shell input motionevent MOVE 520 650
+            adb shell input motionevent MOVE 640 850
+            adb shell input motionevent MOVE 760 630
+            adb shell input motionevent MOVE 900 790
+            adb shell input motionevent UP 900 790
+            sleep 1
+            adb shell input tap 800 1585
+            sleep 1
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/02-trajetoria.png
+
+            adb shell input tap 965 80
+            sleep 1
+            adb shell input tap 540 620
+            sleep 1
+            for i in 1 2 3 4 5; do adb shell input tap 175 1720; sleep 0.25; done
+            sleep 1
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/03-pista-oval.png
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: esfera-vetorial-screenshots-v0.2.2
+          path: apps/esfera-vetorial/android/screenshots-ci/*.png
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish screenshots in repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git restore apps/esfera-vetorial/android/app/build.gradle || true
+          git restore apps/esfera-vetorial/android/app/src/main/java/pt/esferavetorial/app/VectorBallView.java || true
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          mkdir -p apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
+          cp apps/esfera-vetorial/android/screenshots-ci/*.png apps/esfera-vetorial/screenshots/
+          cp apps/esfera-vetorial/android/screenshots-ci/*.png docs/esfera-vetorial/screenshots/
+          git add apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
+          git commit -m "Atualizar screenshots Esfera Vetorial" || exit 0
+          git push
