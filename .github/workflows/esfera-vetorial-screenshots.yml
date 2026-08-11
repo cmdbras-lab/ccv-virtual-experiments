@@ -39,6 +39,13 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
+      - name: Enable KVM acceleration
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          fi
+
       - name: Prepare legacy signing key when present
         if: ${{ hashFiles('apps/esfera-vetorial/android/test-signing.keystore.b64') != '' }}
         working-directory: apps/esfera-vetorial/android
