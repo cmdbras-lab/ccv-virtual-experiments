@@ -125,7 +125,11 @@ public final class VectorBallView extends View {
     private boolean trajectoryRunning;
     private boolean trajectoryFinished;
     private boolean showComponents;
-    private float initialSpeed = 0.18f;
+    private static final float TRAJECTORY_SPEED_MIN = 0.01f;
+    private static final float TRAJECTORY_SPEED_MAX = 0.06f;
+    private static final float[] TRAJECTORY_TIME_SCALES = {1f, 0.5f, 0.25f, 0.125f};
+    private float initialSpeed = 0.04f;
+    private int trajectoryTimeScaleIndex;
     private boolean draggingSpeed;
 
     private final RectF speedSlider = new RectF();
@@ -224,8 +228,8 @@ public final class VectorBallView extends View {
         float margin = 22f * density;
         float gap = 18f * density;
         float top = 150f * density;
-        float available = getHeight() - systemBottomInsetPx - top - 40f * density;
-        float cardH = Math.min(190f * density, (available - gap) / 2f);
+        float available = getHeight() - systemBottomInsetPx - top - 112f * density;
+        float cardH = Math.min(176f * density, (available - gap) / 2f);
         menuMode1.set(margin, top, getWidth() - margin, top + cardH);
         menuMode2.set(margin, top + cardH + gap, getWidth() - margin, top + cardH * 2f + gap);
 
@@ -233,6 +237,16 @@ public final class VectorBallView extends View {
                 "Inclinação do telemóvel • alvos • pistas • colisões", Color.rgb(44, 83, 150));
         drawMenuCard(canvas, menuMode2, "MODO 2", "Trajetória desenhada",
                 "Desenhe uma curva • escolha v₀ • observe v e a", Color.rgb(117, 74, 140));
+
+        float creditY = getHeight() - systemBottomInsetPx - 58f * density;
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setFakeBoldText(false);
+        textPaint.setColor(Color.rgb(78, 86, 101));
+        textPaint.setTextSize(10.5f * density);
+        canvas.drawText("Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar-",
+                cx, creditY, textPaint);
+        canvas.drawText("junho 2026. (Programação com recurso IA).",
+                cx, creditY + 17f * density, textPaint);
         textPaint.setTextAlign(Paint.Align.LEFT);
     }
 
@@ -996,16 +1010,31 @@ public final class VectorBallView extends View {
         }
     }
 
+    private float trajectoryTimeScale() {
+        return TRAJECTORY_TIME_SCALES[Math.max(0, Math.min(TRAJECTORY_TIME_SCALES.length - 1, trajectoryTimeScaleIndex))];
+    }
+
+    private String trajectoryTimeScaleLabel() {
+        switch (trajectoryTimeScaleIndex) {
+            case 1: return "1/2×";
+            case 2: return "1/4×";
+            case 3: return "1/8×";
+            default: return "1×";
+        }
+    }
+
     private void drawMode2(Canvas canvas, float dt) {
-        advanceTrajectory(dt);
+        // A câmara lenta altera apenas o avanço temporal da animação.
+        // v e a continuam a ser calculadas e apresentadas em unidades físicas reais.
+        advanceTrajectory(dt * trajectoryTimeScale());
         drawGrid(canvas, trajectoryControlsTopPx());
         drawTrajectoryCurve(canvas);
         if (trajectoryReady) {
             drawBall(canvas, trajectoryX, trajectoryY, trajectoryS);
             drawVectorSet(canvas, trajectoryX, trajectoryY,
                     trajectoryVx, trajectoryVy, trajectoryAx, trajectoryAy,
-                    650f * density, 180f * density,
-                    Math.min(getWidth() * 0.62f, 250f * density), showComponents);
+                    1900f * density, 2400f * density,
+                    Math.min(getWidth() * 0.82f, 330f * density), showComponents);
         }
         drawHudMode2(canvas);
         drawTrajectoryControls(canvas);
@@ -1072,7 +1101,9 @@ public final class VectorBallView extends View {
         textPaint.setColor(Color.rgb(80, 88, 100));
         textPaint.setTextSize(11f * density);
         String state = trajectoryDrawing ? "a desenhar" : trajectoryRunning ? "em movimento" : trajectoryFinished ? "fim" : trajectoryReady ? "pronta" : "sem trajetória";
-        canvas.drawText(String.format(Locale.US, "v₀ = %.2f m/s • trajetória %.2f m • %s", initialSpeed, trajectoryTotalM, state), pad + 12f * density, top + 114f * density, textPaint);
+        canvas.drawText(String.format(Locale.US, "v₀ = %.2f m/s • traj. %.2f m • reprodução %s • %s",
+                initialSpeed, trajectoryTotalM, trajectoryTimeScaleLabel(), state),
+                pad + 12f * density, top + 114f * density, textPaint);
     }
 
     private void drawTrajectoryControls(Canvas canvas) {
@@ -1094,14 +1125,14 @@ public final class VectorBallView extends View {
         float right = panel.right - 14f * density;
         float y = panel.bottom - 14f * density;
         speedSlider.set(left, y - 13f * density, right, y + 13f * density);
-        float normalized = (initialSpeed - 0.04f) / (0.40f - 0.04f);
+        float normalized = (initialSpeed - TRAJECTORY_SPEED_MIN) / (TRAJECTORY_SPEED_MAX - TRAJECTORY_SPEED_MIN);
         drawSlider(canvas, left, right, y, normalized, Color.rgb(105, 72, 138));
 
         String[] labels = {
                 "Nova trajetória",
                 trajectoryRunning ? "Pausa" : (trajectoryReady ? "Executar" : "Executar"),
                 showComponents ? "Componentes ✓" : "Componentes",
-                "Menu"
+                "Slow " + trajectoryTimeScaleLabel()
         };
         float gap = 6f * density;
         float h = 40f * density;
@@ -1426,7 +1457,7 @@ public final class VectorBallView extends View {
 
     private void setInitialSpeedFromX(float x) {
         float n = valueFromSliderX(speedSlider, x);
-        initialSpeed = 0.04f + n * (0.40f - 0.04f);
+        initialSpeed = TRAJECTORY_SPEED_MIN + n * (TRAJECTORY_SPEED_MAX - TRAJECTORY_SPEED_MIN);
         invalidate();
     }
 
@@ -1445,8 +1476,7 @@ public final class VectorBallView extends View {
                 invalidate();
                 break;
             case 3:
-                appMode = APP_MENU;
-                trajectoryRunning = false;
+                trajectoryTimeScaleIndex = (trajectoryTimeScaleIndex + 1) % TRAJECTORY_TIME_SCALES.length;
                 invalidate();
                 break;
             default:

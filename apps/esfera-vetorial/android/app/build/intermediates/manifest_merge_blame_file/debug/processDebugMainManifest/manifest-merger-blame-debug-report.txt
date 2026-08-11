@@ -1,0 +1,48 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="pt.esferavetorial.app"
+4    android:versionCode="9"
+5    android:versionName="0.2.2" >
+6
+7    <uses-sdk
+7-->INJECTED
+8        android:minSdkVersion="26"
+8-->INJECTED
+9        android:targetSdkVersion="36" />
+9-->INJECTED
+10
+11    <application
+11-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:3:5-17:19
+12        android:allowBackup="true"
+12-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:4:9-35
+13        android:debuggable="true"
+14        android:extractNativeLibs="false"
+14-->INJECTED
+15        android:label="Esfera Vetorial"
+15-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:5:9-40
+16        android:supportsRtl="true"
+16-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:6:9-35
+17        android:theme="@android:style/Theme.Material.Light.NoActionBar" >
+17-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:7:9-72
+18        <activity
+18-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:8:9-16:20
+19            android:name="pt.esferavetorial.app.MainActivity"
+19-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:9:13-41
+20            android:exported="true"
+20-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:10:13-36
+21            android:screenOrientation="portrait" >
+21-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:11:13-49
+22            <intent-filter>
+22-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:12:13-15:29
+23                <action android:name="android.intent.action.MAIN" />
+23-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:13:17-69
+23-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:13:25-66
+24
+25                <category android:name="android.intent.category.LAUNCHER" />
+25-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:14:17-77
+25-->/home/runner/work/ccv-virtual-experiments/ccv-virtual-experiments/apps/esfera-vetorial/android/app/src/main/AndroidManifest.xml:14:27-74
+26            </intent-filter>
+27        </activity>
+28    </application>
+29
+30</manifest>
