@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - esfera-vetorial-build
+      - main
     paths:
       - 'apps/esfera-vetorial/android/**'
       - '.github/workflows/esfera-vetorial-apk.yml'
@@ -20,7 +21,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Apply v0.2.2 patch
+      - name: Apply compatibility patch when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/patch_v021.py') != '' }}
         working-directory: apps/esfera-vetorial/android
         run: python3 patch_v021.py
 
@@ -41,7 +43,8 @@ jobs:
       - name: Install Android API 36
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
 
-      - name: Prepare persistent test signing key
+      - name: Prepare legacy test signing key when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/test-signing.keystore.b64') != '' }}
         working-directory: apps/esfera-vetorial/android
         run: base64 -d test-signing.keystore.b64 > test-signing.keystore
 
@@ -64,5 +67,27 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/esfera-vetorial/downloads/EsferaVetorial-v0.2.2.apk
-          git commit -m "Publicar APK Esfera Vetorial v0.2.2" || exit 0
-          git push
+          git commit -m "Publicar APK Esfera Vetorial v0.2.2" || true
+          git push || true
+
+      - name: Normalize public source after prototype patch
+        if: ${{ hashFiles('apps/esfera-vetorial/android/patch_v021.py') != '' }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/esfera-vetorial/android/app/build.gradle')
+          text = p.read_text(encoding='utf-8')
+          start = text.find('    signingConfigs {')
+          end = text.find('    buildTypes {')
+          if start >= 0 and end > start:
+              text = text[:start] + text[end:]
+          text = text.replace("        debug {\n            signingConfig signingConfigs.debug\n        }\n", "")
+          p.write_text(text, encoding='utf-8')
+          PY
+          rm -f apps/esfera-vetorial/android/patch_v021.py
+          rm -f apps/esfera-vetorial/android/test-signing.keystore.b64
+          rm -rf apps/esfera-vetorial/source-b64
+          rm -f apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip
+          git add -A apps/esfera-vetorial/android apps/esfera-vetorial/source-b64 apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip || true
+          git commit -m "Integrar v0.2.2 diretamente no código-fonte público" || true
+          git push || true
