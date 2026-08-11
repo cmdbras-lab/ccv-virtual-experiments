@@ -28,8 +28,28 @@ public final class VectorBallView extends View {
     private final RectF massSlider = new RectF();
 
     private static final float CONTROL_DEAD_ZONE = 0.10f;
-    // Corresponde ao valor de Sensibilidade = 0% da v0.1.4, aprovado em teste real.
     private static final float CONTROL_GAIN = 0.035f;
+    private static final float TRACK_PENALTY_SECONDS = 2.0f;
+    private static final long TRACK_HIT_COOLDOWN_MS = 350L;
+
+    private static final float[][][] TRACKS = new float[][][] {
+            {
+                    {0.16f, 0.84f}, {0.16f, 0.68f}, {0.38f, 0.58f},
+                    {0.28f, 0.40f}, {0.52f, 0.29f}, {0.76f, 0.38f}, {0.82f, 0.16f}
+            },
+            {
+                    {0.15f, 0.84f}, {0.33f, 0.74f}, {0.20f, 0.59f},
+                    {0.50f, 0.50f}, {0.76f, 0.58f}, {0.67f, 0.36f},
+                    {0.40f, 0.27f}, {0.72f, 0.15f}
+            },
+            {
+                    {0.16f, 0.84f}, {0.42f, 0.78f}, {0.28f, 0.65f},
+                    {0.69f, 0.60f}, {0.78f, 0.46f}, {0.50f, 0.41f},
+                    {0.25f, 0.32f}, {0.55f, 0.24f}, {0.79f, 0.15f}
+            }
+    };
+
+    private static final float[] TRACK_HALF_WIDTHS_M = {0.0105f, 0.0095f, 0.0088f};
 
     private float sensorX, sensorY, sensorZ = 9.81f;
     private float zeroX, zeroY;
@@ -58,14 +78,28 @@ public final class VectorBallView extends View {
     private boolean showVectors = true;
     private boolean showTrail = true;
     private boolean draggingMass;
-    // "Massa" é o controlo perceptivo de inércia/resposta do jogo.
     private float massSetting = 0.88f;
+
+    private boolean trackStarted;
+    private boolean trackFinished;
+    private long trackStartMs;
+    private long trackFinishMs;
+    private long lastTrackHitMs;
+    private int trackHits;
+    private float trackPenaltySeconds;
+    private boolean trackWallContact;
 
     private final float targetXFraction = 0.75f;
     private final float targetYFraction = 0.46f;
     private final float targetRadiusM = 0.018f;
 
     private final float density;
+
+    private static final class NearestPoint {
+        float x;
+        float y;
+        float distance;
+    }
 
     public VectorBallView(Context context) {
         super(context);
@@ -123,7 +157,6 @@ public final class VectorBallView extends View {
     }
 
     private float controlsTopPx() {
-        // Painel reduzido: apenas Massa + Atrito.
         return buttonRowsTopPx() - 62f * density;
     }
 
@@ -133,8 +166,31 @@ public final class VectorBallView extends View {
         return Math.min(heightM, bottomPx / pixelsPerMeter);
     }
 
+    private boolean isTrackMode() {
+        return mode >= 3;
+    }
+
+    private int trackIndex() {
+        return Math.max(0, Math.min(2, mode - 3));
+    }
+
+    private float trackX(int index, int point) {
+        return widthM * TRACKS[index][point][0];
+    }
+
+    private float trackY(int index, int point) {
+        return playableHeightM() * TRACKS[index][point][1];
+    }
+
     private void resetSimulation() {
         physics.reset(widthM, playableHeightM());
+        if (isTrackMode()) {
+            int t = trackIndex();
+            physics.x = trackX(t, 0);
+            physics.y = trackY(t, 0);
+            physics.vx = 0f;
+            physics.vy = 0f;
+        }
         trail.clear();
         controlGravityX = controlGravityY = 0f;
         shownAx = shownAy = 0f;
@@ -145,6 +201,15 @@ public final class VectorBallView extends View {
         targetStableSinceMs = 0L;
         challengeStartMs = SystemClock.elapsedRealtime();
         lastFrameNanos = 0L;
+
+        trackStarted = false;
+        trackFinished = false;
+        trackStartMs = 0L;
+        trackFinishMs = 0L;
+        lastTrackHitMs = 0L;
+        trackHits = 0;
+        trackPenaltySeconds = 0f;
+        trackWallContact = false;
         invalidate();
     }
 
@@ -196,10 +261,16 @@ public final class VectorBallView extends View {
                 widthM, playableHeightM(), radiusM);
 
         long nowMs = SystemClock.elapsedRealtime();
-        if (physics.collidedThisFrame) {
+        trackWallContact = false;
+        if (isTrackMode() && !trackFinished) {
+            constrainToTrack(nowMs);
+            updateTrackChallenge(nowMs);
+        }
+
+        if (physics.collidedThisFrame || trackWallContact) {
             shownAx = physics.displayAx;
             shownAy = physics.displayAy;
-            impactVisibleUntilMs = nowMs + 150L;
+            impactVisibleUntilMs = nowMs + 140L;
         } else if (nowMs >= impactVisibleUntilMs) {
             shownAx = physics.ax;
             shownAy = physics.ay;
@@ -210,15 +281,19 @@ public final class VectorBallView extends View {
         updateTrail();
 
         drawGrid(canvas);
-        if (mode != 0) drawTarget(canvas);
+        if (isTrackMode()) {
+            drawTrack(canvas);
+        } else if (mode != 0) {
+            drawTarget(canvas);
+        }
         if (showTrail) drawTrail(canvas);
         drawBall(canvas);
         if (nowMs < impactVisibleUntilMs) drawImpactHalo(canvas);
         if (showVectors) drawVectors(canvas);
-        drawHud(canvas, controlGravityX, controlGravityY);
+        drawHud(canvas, controlGravityX, controlGravityY, nowMs);
         drawParameterPanel(canvas);
         drawButtons(canvas);
-        if (success) drawSuccess(canvas);
+        if (success) drawSuccess(canvas, nowMs);
 
         postInvalidateOnAnimation();
     }
@@ -235,7 +310,7 @@ public final class VectorBallView extends View {
     }
 
     private void updateChallenge() {
-        if (mode == 0 || success) return;
+        if (mode == 0 || isTrackMode() || success) return;
         float tx = widthM * targetXFraction;
         float ty = playableHeightM() * targetYFraction;
         float distance = (float) Math.hypot(physics.x - tx, physics.y - ty);
@@ -257,6 +332,106 @@ public final class VectorBallView extends View {
         } else {
             targetStableSinceMs = 0L;
         }
+    }
+
+    private NearestPoint nearestPointOnTrack(int track, float x, float y) {
+        NearestPoint result = new NearestPoint();
+        result.distance = Float.MAX_VALUE;
+        float[][] points = TRACKS[track];
+        for (int i = 0; i < points.length - 1; i++) {
+            float x1 = trackX(track, i);
+            float y1 = trackY(track, i);
+            float x2 = trackX(track, i + 1);
+            float y2 = trackY(track, i + 1);
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float length2 = dx * dx + dy * dy;
+            float u = length2 > 1e-8f ? ((x - x1) * dx + (y - y1) * dy) / length2 : 0f;
+            u = Math.max(0f, Math.min(1f, u));
+            float qx = x1 + u * dx;
+            float qy = y1 + u * dy;
+            float d = (float) Math.hypot(x - qx, y - qy);
+            if (d < result.distance) {
+                result.distance = d;
+                result.x = qx;
+                result.y = qy;
+            }
+        }
+        return result;
+    }
+
+    private void constrainToTrack(long nowMs) {
+        int t = trackIndex();
+        NearestPoint nearest = nearestPointOnTrack(t, physics.x, physics.y);
+        float allowed = Math.max(0.0015f, TRACK_HALF_WIDTHS_M[t] - radiusM);
+        if (nearest.distance <= allowed) return;
+
+        float nx;
+        float ny;
+        if (nearest.distance > 1e-6f) {
+            nx = (physics.x - nearest.x) / nearest.distance;
+            ny = (physics.y - nearest.y) / nearest.distance;
+        } else {
+            nx = 1f;
+            ny = 0f;
+        }
+
+        physics.x = nearest.x + nx * allowed * 0.96f;
+        physics.y = nearest.y + ny * allowed * 0.96f;
+
+        float normalSpeed = physics.vx * nx + physics.vy * ny;
+        if (normalSpeed > 0f) {
+            physics.vx -= 1.10f * normalSpeed * nx;
+            physics.vy -= 1.10f * normalSpeed * ny;
+        }
+        physics.vx *= 0.42f;
+        physics.vy *= 0.42f;
+        trackWallContact = true;
+
+        if (nowMs - lastTrackHitMs >= TRACK_HIT_COOLDOWN_MS) {
+            trackHits++;
+            trackPenaltySeconds += TRACK_PENALTY_SECONDS;
+            lastTrackHitMs = nowMs;
+        }
+    }
+
+    private void updateTrackChallenge(long nowMs) {
+        int t = trackIndex();
+        float sx = trackX(t, 0);
+        float sy = trackY(t, 0);
+        int last = TRACKS[t].length - 1;
+        float fx = trackX(t, last);
+        float fy = trackY(t, last);
+
+        if (!trackStarted) {
+            float fromStart = (float) Math.hypot(physics.x - sx, physics.y - sy);
+            if (fromStart > 0.0075f) {
+                trackStarted = true;
+                trackStartMs = nowMs;
+            }
+            return;
+        }
+
+        if (!trackFinished) {
+            float toFinish = (float) Math.hypot(physics.x - fx, physics.y - fy);
+            if (toFinish < 0.0080f) {
+                trackFinished = true;
+                trackFinishMs = nowMs;
+                success = true;
+                float finalTime = trackTotalSeconds(nowMs);
+                score = Math.max(100, Math.round(5000f - finalTime * 90f - trackHits * 180f));
+            }
+        }
+    }
+
+    private float trackRawSeconds(long nowMs) {
+        if (!trackStarted) return 0f;
+        long end = trackFinished ? trackFinishMs : nowMs;
+        return Math.max(0f, (end - trackStartMs) / 1000f);
+    }
+
+    private float trackTotalSeconds(long nowMs) {
+        return trackRawSeconds(nowMs) + trackPenaltySeconds;
     }
 
     private void drawGrid(Canvas canvas) {
@@ -296,6 +471,57 @@ public final class VectorBallView extends View {
         canvas.drawCircle(tx, ty, tr * 0.50f, paint);
     }
 
+    private void buildTrackPath(int t) {
+        path.reset();
+        path.moveTo(px(trackX(t, 0)), px(trackY(t, 0)));
+        for (int i = 1; i < TRACKS[t].length; i++) {
+            path.lineTo(px(trackX(t, i)), px(trackY(t, i)));
+        }
+    }
+
+    private void drawTrack(Canvas canvas) {
+        int t = trackIndex();
+        buildTrackPath(t);
+
+        float corridorWidth = px(TRACK_HALF_WIDTHS_M[t] * 2f);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.ROUND);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(corridorWidth + 3.2f * density);
+        paint.setColor(Color.rgb(78, 87, 102));
+        canvas.drawPath(path, paint);
+
+        paint.setStrokeWidth(corridorWidth);
+        paint.setColor(Color.rgb(236, 240, 246));
+        canvas.drawPath(path, paint);
+
+        paint.setStrokeWidth(1.1f * density);
+        paint.setColor(Color.rgb(165, 175, 190));
+        canvas.drawPath(path, paint);
+
+        float startX = px(trackX(t, 0));
+        float startY = px(trackY(t, 0));
+        int last = TRACKS[t].length - 1;
+        float finishX = px(trackX(t, last));
+        float finishY = px(trackY(t, last));
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(115, 45, 160, 90));
+        canvas.drawCircle(startX, startY, px(0.0080f), paint);
+        paint.setColor(Color.argb(135, 230, 165, 35));
+        canvas.drawCircle(finishX, finishY, px(0.0080f), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setFakeBoldText(true);
+        textPaint.setTextSize(10f * density);
+        textPaint.setColor(Color.rgb(30, 105, 65));
+        canvas.drawText("PARTIDA", startX, startY - px(0.010f), textPaint);
+        textPaint.setColor(Color.rgb(150, 95, 15));
+        canvas.drawText("META", finishX, finishY - px(0.010f), textPaint);
+        textPaint.setFakeBoldText(false);
+        textPaint.setTextAlign(Paint.Align.LEFT);
+    }
+
     private void drawTrail(Canvas canvas) {
         if (trail.size() < 2) return;
         path.reset();
@@ -309,8 +535,8 @@ public final class VectorBallView extends View {
             }
         }
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.7f * density);
-        paint.setColor(Color.argb(125, 80, 90, 110));
+        paint.setStrokeWidth(1.4f * density);
+        paint.setColor(Color.argb(110, 80, 90, 110));
         canvas.drawPath(path, paint);
     }
 
@@ -328,7 +554,7 @@ public final class VectorBallView extends View {
         paint.setShader(null);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.7f * density);
+        paint.setStrokeWidth(1.5f * density);
         paint.setColor(Color.rgb(25, 40, 85));
         canvas.drawCircle(cx, cy, r, paint);
 
@@ -339,7 +565,7 @@ public final class VectorBallView extends View {
         path.reset();
         path.addCircle(cx, cy, r * 0.94f, Path.Direction.CW);
         canvas.clipPath(path);
-        paint.setStrokeWidth(2.2f * density);
+        paint.setStrokeWidth(1.7f * density);
         paint.setColor(Color.argb(180, 255, 255, 255));
         canvas.drawLine(cx - dx, cy - dy, cx + dx, cy + dy, paint);
         canvas.restore();
@@ -348,10 +574,12 @@ public final class VectorBallView extends View {
     private void drawImpactHalo(Canvas canvas) {
         float cx = px(physics.x);
         float cy = px(physics.y);
-        float r = px(radiusM) + 8f * density;
+        float r = px(radiusM) + 7f * density;
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2.5f * density);
-        paint.setColor(Color.argb(180, 235, 125, 25));
+        paint.setStrokeWidth(1.7f * density);
+        paint.setColor(trackWallContact
+                ? Color.argb(185, 230, 105, 35)
+                : Color.argb(160, 235, 125, 25));
         canvas.drawCircle(cx, cy, r, paint);
     }
 
@@ -359,10 +587,9 @@ public final class VectorBallView extends View {
         float cx = px(physics.x);
         float cy = px(physics.y);
 
-        // Escalas independentes por opção didática: a aceleração é ampliada muito mais.
-        float velocityScale = 2300f * density;      // ~2,2x a v0.1.4
-        float accelerationScale = 1400f * density; // ~6,4x a v0.1.4
-        float maxLength = Math.min(getWidth() * 1.30f, 440f * density);
+        float velocityScale = 1950f * density;
+        float accelerationScale = 1180f * density;
+        float maxLength = Math.min(getWidth() * 1.05f, 380f * density);
 
         drawArrow(canvas, cx, cy,
                 physics.vx * velocityScale,
@@ -391,14 +618,14 @@ public final class VectorBallView extends View {
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(6.2f * density);
+        paint.setStrokeWidth(3.0f * density);
         paint.setColor(color);
         canvas.drawLine(x1, y1, x2, y2, paint);
 
         float ux = dx / length;
         float uy = dy / length;
-        float head = 18f * density;
-        float wing = 10f * density;
+        float head = 12f * density;
+        float wing = 6f * density;
         float bx = x2 - ux * head;
         float by = y2 - uy * head;
         float perpX = -uy;
@@ -411,16 +638,27 @@ public final class VectorBallView extends View {
         canvas.drawPath(path, paint);
 
         textPaint.setColor(color);
-        textPaint.setTextSize(21f * density);
-        textPaint.setFakeBoldText(true);
-        canvas.drawText(label, x2 + 9f * density, y2 - 8f * density, textPaint);
+        textPaint.setTextSize(16f * density);
         textPaint.setFakeBoldText(false);
+        canvas.drawText(label, x2 + 6f * density, y2 - 5f * density, textPaint);
     }
 
-    private void drawHud(Canvas canvas, float effectiveGravityX, float effectiveGravityY) {
+    private String modeName() {
+        switch (mode) {
+            case 0: return "Exploração";
+            case 1: return "Parar no alvo";
+            case 2: return "Alvo: v máx. 0,40 m/s";
+            case 3: return "Pista 1";
+            case 4: return "Pista 2";
+            case 5: return "Pista 3";
+            default: return "Exploração";
+        }
+    }
+
+    private void drawHud(Canvas canvas, float effectiveGravityX, float effectiveGravityY, long nowMs) {
         float pad = 12f * density;
         float boxTop = 10f * density;
-        float boxHeight = 118f * density;
+        float boxHeight = isTrackMode() ? 137f * density : 118f * density;
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(220, 255, 255, 255));
         canvas.drawRoundRect(new RectF(pad, boxTop, getWidth() - pad, boxTop + boxHeight),
@@ -434,8 +672,7 @@ public final class VectorBallView extends View {
 
         textPaint.setTextSize(13f * density);
         String model = physics.realSphere ? "esfera maciça (5/7)" : "modelo ideal (1)";
-        String modeName = mode == 0 ? "Exploração" : (mode == 1 ? "Parar no alvo" : "Alvo: v máx. 0,40 m/s");
-        canvas.drawText("Modo: " + modeName + "   •   Modelo: " + model,
+        canvas.drawText("Modo: " + modeName() + "   •   Modelo: " + model,
                 pad + 12f * density, boxTop + 47f * density, textPaint);
 
         textPaint.setTextSize(14f * density);
@@ -452,9 +689,25 @@ public final class VectorBallView extends View {
         textPaint.setTextSize(11f * density);
         String sensor = !sensorAvailable ? "Sensor indisponível"
                 : (accelerometerFallback ? "Acelerómetro filtrado" : "Sensor de gravidade");
-        canvas.drawText(String.format(Locale.US, "%s • g∥=(%.2f, %.2f) • percurso %.2f m • escalas v/a independentes",
+        canvas.drawText(String.format(Locale.US, "%s • g∥=(%.2f, %.2f) • percurso %.2f m",
                         sensor, effectiveGravityX, effectiveGravityY, physics.distance),
                 pad + 12f * density, boxTop + 111f * density, textPaint);
+
+        if (isTrackMode()) {
+            textPaint.setFakeBoldText(true);
+            textPaint.setTextSize(11.5f * density);
+            textPaint.setColor(Color.rgb(95, 63, 20));
+            String timer;
+            if (!trackStarted) {
+                timer = "Saia da PARTIDA para iniciar o cronómetro";
+            } else {
+                timer = String.format(Locale.US,
+                        "Tempo %.2f s + penal. %.0f s = %.2f s   •   toques %d",
+                        trackRawSeconds(nowMs), trackPenaltySeconds, trackTotalSeconds(nowMs), trackHits);
+            }
+            canvas.drawText(timer, pad + 12f * density, boxTop + 130f * density, textPaint);
+            textPaint.setFakeBoldText(false);
+        }
     }
 
     private void drawParameterPanel(Canvas canvas) {
@@ -506,21 +759,32 @@ public final class VectorBallView extends View {
                             float value, int knobColor) {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(4f * density);
+        paint.setStrokeWidth(3f * density);
         paint.setColor(Color.rgb(180, 188, 199));
         canvas.drawLine(left, y, right, y, paint);
 
         float knobX = left + value * (right - left);
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(knobColor);
-        canvas.drawCircle(knobX, y, 8f * density, paint);
+        canvas.drawCircle(knobX, y, 7f * density, paint);
+    }
+
+    private String modeButtonLabel() {
+        switch (mode) {
+            case 0: return "Explorar";
+            case 1: return "Alvo";
+            case 2: return "Alvo ≤0,40";
+            case 3: return "Pista 1";
+            case 4: return "Pista 2";
+            case 5: return "Pista 3";
+            default: return "Explorar";
+        }
     }
 
     private void drawButtons(Canvas canvas) {
         String[] labels = {
                 "Reiniciar", "Calibrar", physics.realSphere ? "Esfera real" : "Ideal",
-                mode == 0 ? "Explorar" : (mode == 1 ? "Alvo" : "Alvo ≤0,40"),
-                showVectors ? "Vetores ✓" : "Vetores", showTrail ? "Rasto ✓" : "Rasto"
+                modeButtonLabel(), showVectors ? "Vetores ✓" : "Vetores", showTrail ? "Rasto ✓" : "Rasto"
         };
         float margin = 8f * density;
         float gap = 6f * density;
@@ -549,21 +813,33 @@ public final class VectorBallView extends View {
         textPaint.setTextAlign(Paint.Align.LEFT);
     }
 
-    private void drawSuccess(Canvas canvas) {
+    private void drawSuccess(Canvas canvas, long nowMs) {
         float cx = getWidth() * 0.5f;
-        float cy = controlsTopPx() * 0.75f;
+        float cy = controlsTopPx() * 0.70f;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.argb(235, 24, 135, 72));
-        RectF box = new RectF(cx - 125f * density, cy - 48f * density,
-                cx + 125f * density, cy + 48f * density);
+        paint.setColor(Color.argb(238, 24, 135, 72));
+        RectF box = new RectF(cx - 135f * density, cy - 58f * density,
+                cx + 135f * density, cy + 58f * density);
         canvas.drawRoundRect(box, 18f * density, 18f * density, paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setColor(Color.WHITE);
         textPaint.setFakeBoldText(true);
-        textPaint.setTextSize(22f * density);
-        canvas.drawText("Objetivo atingido", cx, cy - 8f * density, textPaint);
-        textPaint.setTextSize(16f * density);
-        canvas.drawText("Pontuação: " + score, cx, cy + 20f * density, textPaint);
+        textPaint.setTextSize(21f * density);
+        canvas.drawText(isTrackMode() ? "Pista concluída" : "Objetivo atingido",
+                cx, cy - 20f * density, textPaint);
+
+        if (isTrackMode()) {
+            textPaint.setTextSize(15f * density);
+            canvas.drawText(String.format(Locale.US, "Tempo final: %.2f s", trackTotalSeconds(nowMs)),
+                    cx, cy + 5f * density, textPaint);
+            textPaint.setTextSize(13f * density);
+            canvas.drawText(String.format(Locale.US, "%d toques • %.0f s de penalização",
+                            trackHits, trackPenaltySeconds),
+                    cx, cy + 28f * density, textPaint);
+        } else {
+            textPaint.setTextSize(16f * density);
+            canvas.drawText("Pontuação: " + score, cx, cy + 15f * density, textPaint);
+        }
         textPaint.setFakeBoldText(false);
         textPaint.setTextAlign(Paint.Align.LEFT);
     }
@@ -645,7 +921,7 @@ public final class VectorBallView extends View {
                 resetSimulation();
                 break;
             case 3:
-                mode = (mode + 1) % 3;
+                mode = (mode + 1) % 6;
                 resetSimulation();
                 break;
             case 4:
