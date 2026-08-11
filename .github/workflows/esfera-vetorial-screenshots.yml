@@ -104,12 +104,15 @@ jobs:
 
       - name: Publish screenshots in repository
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # O patch é apenas uma etapa de compatibilidade do protótipo; não deve interferir com o rebase.
+          git restore apps/esfera-vetorial/android/app/build.gradle || true
+          git restore apps/esfera-vetorial/android/app/src/main/java/pt/esferavetorial/app/VectorBallView.java || true
+          git pull --rebase origin "$GITHUB_REF_NAME"
           mkdir -p apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
           cp apps/esfera-vetorial/android/screenshots-ci/*.png apps/esfera-vetorial/screenshots/
           cp apps/esfera-vetorial/android/screenshots-ci/*.png docs/esfera-vetorial/screenshots/
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
           git commit -m "Adicionar screenshots Esfera Vetorial v0.2.2" || exit 0
-          git pull --rebase origin "$GITHUB_REF_NAME"
           git push
