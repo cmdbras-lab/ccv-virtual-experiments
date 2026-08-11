@@ -4,7 +4,7 @@
 
 > **Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar- junho 2026. (Programação com recurso IA).**
 
-[⬇️ **Descarregar APK — Esfera Vetorial v0.2.2**](downloads/EsferaVetorial-v0.2.2.apk) · [🌐 **Página de divulgação**](https://cmdbras-lab.github.io/ccv-virtual-experiments/)
+[⬇️ **Descarregar APK — Esfera Vetorial v0.2.2**](downloads/EsferaVetorial-v0.2.2.apk) · [🌐 **Página de divulgação**](https://cmdbras-lab.github.io/ccv-virtual-experiments/esfera-vetorial/)
 
 ## O que é
 
