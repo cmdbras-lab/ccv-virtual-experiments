@@ -23,6 +23,31 @@ replace_once(
 )
 
 replace_once(
+    '        float available = getHeight() - systemBottomInsetPx - top - 40f * density;\n'
+    '        float cardH = Math.min(190f * density, (available - gap) / 2f);',
+    '        float available = getHeight() - systemBottomInsetPx - top - 112f * density;\n'
+    '        float cardH = Math.min(176f * density, (available - gap) / 2f);'
+)
+
+replace_once(
+    '        drawMenuCard(canvas, menuMode2, "MODO 2", "Trajetória desenhada",\n'
+    '                "Desenhe uma curva • escolha v₀ • observe v e a", Color.rgb(117, 74, 140));\n'
+    '        textPaint.setTextAlign(Paint.Align.LEFT);',
+    '        drawMenuCard(canvas, menuMode2, "MODO 2", "Trajetória desenhada",\n'
+    '                "Desenhe uma curva • escolha v₀ • observe v e a", Color.rgb(117, 74, 140));\n\n'
+    '        float creditY = getHeight() - systemBottomInsetPx - 58f * density;\n'
+    '        textPaint.setTextAlign(Paint.Align.CENTER);\n'
+    '        textPaint.setFakeBoldText(false);\n'
+    '        textPaint.setColor(Color.rgb(78, 86, 101));\n'
+    '        textPaint.setTextSize(10.5f * density);\n'
+    '        canvas.drawText("Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar-",\n'
+    '                cx, creditY, textPaint);\n'
+    '        canvas.drawText("junho 2026. (Programação com recurso IA).",\n'
+    '                cx, creditY + 17f * density, textPaint);\n'
+    '        textPaint.setTextAlign(Paint.Align.LEFT);'
+)
+
+replace_once(
     '    private void drawMode2(Canvas canvas, float dt) {\n'
     '        advanceTrajectory(dt);',
     '    private float trajectoryTimeScale() {\n'
@@ -90,8 +115,8 @@ java_path.write_text(text, encoding='utf-8')
 gradle = gradle_path.read_text(encoding='utf-8')
 if "versionCode 7" not in gradle or "versionName '0.2.0'" not in gradle:
     raise SystemExit('Versão base inesperada em build.gradle')
-gradle = gradle.replace('versionCode 7', 'versionCode 8', 1)
-gradle = gradle.replace("versionName '0.2.0'", "versionName '0.2.1'", 1)
+gradle = gradle.replace('versionCode 7', 'versionCode 9', 1)
+gradle = gradle.replace("versionName '0.2.0'", "versionName '0.2.2'", 1)
 gradle_path.write_text(gradle, encoding='utf-8')
 
-print('Patch v0.2.1 aplicado com sucesso')
+print('Patch v0.2.2 aplicado com sucesso')
