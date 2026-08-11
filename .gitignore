@@ -9,4 +9,6 @@ Thumbs.db
 .env.*
 !.env.example
 *.zip
+!apps/laboratorio-no2-n2o4/downloads/Laboratorio-NO2-N2O4-v1.0.0.zip
+!site/laboratorio-no2-n2o4/downloads/Laboratorio-NO2-N2O4-v1.0.0.zip
 public/mediapipe/

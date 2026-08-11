@@ -1,0 +1,2371 @@
+<!doctype html>
+<html lang="pt-PT" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="author" content="Carlos Brás — Clube Ciência Viva Abel Salazar">
+<title>Laboratório NO₂ ⇌ N₂O₄</title>
+<meta name="description" content="Simulação didática da compressão isotérmica no equilíbrio 2 NO₂(g) ⇌ N₂O₄(g), com partículas, cinética, gráficos e análise óptica.">
+<style>:root {
+  color-scheme: light dark;
+  background-color: transparent !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --main-surface-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --red: light-dark(rgb(186 38 35), rgb(250 66 62));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, "Segoe UI", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 10px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z'/%3E%3C/svg%3E");
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-visualize-standalone] {
+  background-color: var(--background) !important;
+}
+
+/* Generic mobile code-block hosts provide light/dark mode but no series palette.
+   AppBlock hosts set all six variables themselves. */
+:root:not([data-app-block-surface]) {
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(#f3883b, #f59a56);
+  --viz-series-3: light-dark(#5dc977, #74d58b);
+  --viz-series-4: light-dark(#eb77b1, #f08fc0);
+  --viz-series-5: light-dark(#9b79ec, #aa91ef);
+  --viz-series-6: light-dark(#3ab9b1, #5acbc2);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html > body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+:root:not([data-app-block-surface]) > body {
+  padding: 12px;
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive > .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align="right"]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align="center"]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget > :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The bundled tooltip runtime owns [data-tooltip]. AppBlock's CSS-only
+   pseudo-tooltip can widen dense grids even while hidden. */
+main [data-tooltip]::after {
+  content: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls > .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls > .form-label > :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--interactive-label-primary-default, var(--primary-foreground));
+  background: var(--interactive-bg-primary-default, var(--foreground));
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(
+    in srgb,
+    var(--interactive-label-primary-default, var(--primary-foreground)) 50%,
+    transparent
+  );
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type="file"] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type="file"]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type="file"]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type="checkbox"]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: "";
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type="radio"] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type="radio"]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: "";
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed="true"],
+    [aria-selected="true"],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed="true"], [aria-selected="true"], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget > svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+</style>
+</head>
+<body>
+<div id="no2LabApp" class="no2-lab">
+  <span id="no2ColorSwatch" class="lab-color-swatch lab-color-no2" aria-hidden="true"></span>
+  <span id="n2o4ColorSwatch" class="lab-color-swatch lab-color-n2o4" aria-hidden="true"></span>
+  <span id="beamColorSwatch" class="lab-color-swatch lab-color-beam" aria-hidden="true"></span>
+  <span id="structureColorSwatch" class="lab-color-swatch lab-color-structure" aria-hidden="true"></span>
+
+  <section class="lab-command" aria-label="Comandos da simulação">
+    <div class="lab-reaction">
+      <span class="viz-badge">Laboratório interativo</span>
+      <div class="lab-equation" aria-label="Dois NO dois em equilíbrio com N dois O quatro">
+        2 NO<sub>2</sub>(g) ⇌ N<sub>2</sub>O<sub>4</sub>(g)
+      </div>
+      <div id="phaseLabel" class="text-small text-muted">Equilíbrio inicial</div>
+    </div>
+    <div class="viz-controls lab-actions">
+      <button id="compressBtn" class="btn btn-primary" type="button">Comprimir</button>
+      <button id="playBtn" class="btn" type="button" disabled>Pausa</button>
+      <button id="stepBtn" class="btn btn-ghost" type="button" disabled>Avançar 0,1</button>
+      <button id="resetBtn" class="btn btn-ghost" type="button">Repor</button>
+    </div>
+  </section>
+
+  <div id="phaseMessage" class="lab-message" role="status" aria-live="polite">
+    O sistema está em equilíbrio. Ajuste os parâmetros ou inicie a compressão.
+  </div>
+
+  <section class="lab-metrics" aria-label="Valores atuais">
+    <div><span>Volume</span><strong id="metricVolume">1,000</strong><small>V/V<sub>i</sub></small></div>
+    <div><span>[NO<sub>2</sub>]</span><strong id="metricNO2">1,000</strong><small>u.r.</small></div>
+    <div><span>[N<sub>2</sub>O<sub>4</sub>]</span><strong id="metricN2O4">0,500</strong><small>u.r.</small></div>
+    <div><span>Q<sub>c</sub> / K<sub>c</sub></span><strong id="metricQK">1,000</strong><small id="metricDirection">equilíbrio</small></div>
+    <div><span>Absorvância</span><strong id="metricAbsorbance">0,460</strong><small id="metricAbsorbanceRatio">100% da inicial</small></div>
+  </section>
+
+  <div class="lab-main-grid">
+    <section class="card" aria-label="Recipiente e partículas">
+      <div class="lab-section-heading">
+        <div>
+          <h2>Recipiente molecular</h2>
+          <p class="text-small text-muted">A animação é representativa; os valores são calculados pelas equações.</p>
+        </div>
+        <div class="lab-view-switch" aria-label="Direção de observação">
+          <button id="topViewBtn" class="btn is-selected" type="button" aria-pressed="true">Vista superior</button>
+          <button id="sideViewBtn" class="btn btn-ghost" type="button" aria-pressed="false">Vista lateral</button>
+        </div>
+      </div>
+      <canvas id="vesselCanvas" class="lab-vessel" role="img" aria-label="Recipiente com êmbolo, moléculas de NO2 e N2O4 e percurso da luz"></canvas>
+      <div class="lab-legend" aria-label="Legenda">
+        <span><i class="lab-dot lab-dot-no2" aria-hidden="true"></i>NO<sub>2</sub>: monómero absorvente</span>
+        <span><i class="lab-dimer" aria-hidden="true"></i>N<sub>2</sub>O<sub>4</sub>: dímero</span>
+        <span><i class="lab-beam" aria-hidden="true"></i>Percurso óptico</span>
+      </div>
+    </section>
+
+    <aside class="lab-controls-column">
+      <section class="card" aria-label="Parâmetros">
+        <div class="lab-section-heading">
+          <div>
+            <h2>Experiência</h2>
+            <p class="text-small text-muted">Parâmetros normalizados para exploração didática.</p>
+          </div>
+        </div>
+
+        <label class="form-label" for="compressionFactor">
+          Fator de compressão <strong id="compressionFactorValue">2,00×</strong>
+        </label>
+        <input id="compressionFactor" class="form-range" type="range" min="1.2" max="3" step="0.05" value="2">
+
+        <label class="form-label" for="compressionMode">Tipo de compressão</label>
+        <select id="compressionMode" class="form-select">
+          <option value="instant">Instantânea — separar as etapas</option>
+          <option value="gradual">Gradual — reação simultânea</option>
+        </select>
+
+        <div id="durationControl" class="lab-conditional-control" hidden>
+          <label class="form-label" for="compressionDuration">
+            Duração da compressão <strong id="compressionDurationValue">3,0 u.t.</strong>
+          </label>
+          <input id="compressionDuration" class="form-range" type="range" min="1" max="6" step="0.25" value="3">
+        </div>
+
+        <label class="form-label" for="simulationSpeed">Velocidade da simulação</label>
+        <select id="simulationSpeed" class="form-select">
+          <option value="0.5">0,5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+
+        <details class="lab-advanced">
+          <summary>Parâmetros avançados</summary>
+          <div class="lab-advanced-grid">
+            <label class="form-label" for="initialNO2">[NO<sub>2</sub>]<sub>i</sub>
+              <input id="initialNO2" class="form-control" type="number" min="0.2" max="2" step="0.05" value="1">
+            </label>
+            <label class="form-label" for="initialN2O4">[N<sub>2</sub>O<sub>4</sub>]<sub>i</sub>
+              <input id="initialN2O4" class="form-control" type="number" min="0.05" max="1.5" step="0.05" value="0.5">
+            </label>
+            <label class="form-label" for="forwardRate">k<sub>d</sub>
+              <input id="forwardRate" class="form-control" type="number" min="0.05" max="2" step="0.05" value="0.45">
+            </label>
+            <label class="form-label" for="epsilonNO2">ε(NO<sub>2</sub>)
+              <input id="epsilonNO2" class="form-control" type="number" min="0.05" max="1" step="0.01" value="0.45">
+            </label>
+            <label class="form-label" for="epsilonN2O4">ε(N<sub>2</sub>O<sub>4</sub>)
+              <input id="epsilonN2O4" class="form-control" type="number" min="0" max="0.2" step="0.01" value="0.02">
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <section class="card" aria-label="Interpretação">
+        <div class="lab-section-heading">
+          <div>
+            <h2>Leitura do sistema</h2>
+            <p id="interpretationText">Antes da compressão, Q<sub>c</sub> = K<sub>c</sub> e as velocidades direta e inversa são iguais.</p>
+          </div>
+        </div>
+        <div class="lab-rate-bars" aria-label="Comparação das velocidades">
+          <div>
+            <span>v<sub>direta</sub></span>
+            <div class="lab-bar-track"><i id="forwardBar"></i></div>
+            <strong id="forwardRateValue">0,450</strong>
+          </div>
+          <div>
+            <span>v<sub>inversa</sub></span>
+            <div class="lab-bar-track"><i id="reverseBar"></i></div>
+            <strong id="reverseRateValue">0,450</strong>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="lab-charts-grid">
+    <section class="card">
+      <div class="lab-section-heading">
+        <div>
+          <h2>Concentrações</h2>
+          <p class="text-small text-muted">O salto físico e o reajuste químico aparecem em sequência.</p>
+        </div>
+      </div>
+      <svg id="concentrationChart" class="lab-chart" viewBox="0 0 620 280" role="img" aria-label="Gráfico das concentrações de NO2 e N2O4 ao longo do tempo"></svg>
+      <div class="lab-chart-legend">
+        <span><i class="lab-line lab-line-no2"></i>[NO<sub>2</sub>]</span>
+        <span><i class="lab-line lab-line-n2o4"></i>[N<sub>2</sub>O<sub>4</sub>]</span>
+        <span><i class="lab-line lab-line-reference"></i>[NO<sub>2</sub>]<sub>inicial</sub></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="lab-section-heading">
+        <div>
+          <h2>Quociente da reação</h2>
+          <p class="text-small text-muted">O novo equilíbrio é atingido quando Q<sub>c</sub> volta a K<sub>c</sub>.</p>
+        </div>
+      </div>
+      <svg id="equilibriumChart" class="lab-chart" viewBox="0 0 620 280" role="img" aria-label="Gráfico de Qc e Kc ao longo do tempo"></svg>
+      <div class="lab-chart-legend">
+        <span><i class="lab-line lab-line-q"></i>Q<sub>c</sub></span>
+        <span><i class="lab-line lab-line-k"></i>K<sub>c</sub></span>
+      </div>
+    </section>
+  </div>
+
+  <div class="lab-analysis-grid">
+    <section class="card">
+      <div class="lab-section-heading">
+        <div>
+          <h2>Três momentos decisivos</h2>
+          <p class="text-small text-muted">Valores previstos pelo equilíbrio para os parâmetros escolhidos.</p>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Momento</th>
+              <th class="text-end">[NO<sub>2</sub>]</th>
+              <th class="text-end">[N<sub>2</sub>O<sub>4</sub>]</th>
+              <th class="text-end">Q<sub>c</sub>/K<sub>c</sub></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="initialRow">
+              <td>Equilíbrio inicial</td>
+              <td id="tableInitialNO2" class="text-end">1,000</td>
+              <td id="tableInitialN2O4" class="text-end">0,500</td>
+              <td class="text-end">1,000</td>
+            </tr>
+            <tr id="immediateRow">
+              <td>Após compressão, antes da reação</td>
+              <td id="tableImmediateNO2" class="text-end">2,000</td>
+              <td id="tableImmediateN2O4" class="text-end">1,000</td>
+              <td id="tableImmediateQK" class="text-end">0,500</td>
+            </tr>
+            <tr id="finalRow">
+              <td>Novo equilíbrio</td>
+              <td id="tableFinalNO2" class="text-end">1,562</td>
+              <td id="tableFinalN2O4" class="text-end">1,219</td>
+              <td class="text-end">1,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="inequalityStatement" class="lab-conclusion">
+        1,000 &lt; 1,562 &lt; 2,000 — a concentração final de NO<sub>2</sub> permanece acima da inicial.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="lab-section-heading">
+        <div>
+          <h2>Desafio de previsão</h2>
+          <p>Depois da compressão e do restabelecimento do equilíbrio, como fica [NO<sub>2</sub>] relativamente ao valor inicial?</p>
+        </div>
+      </div>
+      <fieldset class="lab-question">
+        <legend class="sr-only">Escolha a previsão para a concentração final de NO2</legend>
+        <label class="form-check">
+          <input class="form-check-input" type="radio" name="prediction" value="lower">
+          <span class="form-check-label">Fica menor do que o valor inicial.</span>
+        </label>
+        <label class="form-check">
+          <input class="form-check-input" type="radio" name="prediction" value="same">
+          <span class="form-check-label">Regressa exatamente ao valor inicial.</span>
+        </label>
+        <label class="form-check">
+          <input class="form-check-input" type="radio" name="prediction" value="between">
+          <span class="form-check-label">Fica acima do valor inicial, mas abaixo do valor logo após a compressão.</span>
+        </label>
+      </fieldset>
+      <div class="viz-row">
+        <button id="checkPredictionBtn" class="btn" type="button">Verificar previsão</button>
+        <span id="predictionFeedback" class="text-small" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="lab-optics" aria-label="Análise ótica">
+    <div>
+      <strong>Vista superior</strong>
+      <span>A altura e o percurso óptico diminuem com o volume.</span>
+      <code>A = l(ε<sub>NO2</sub>[NO<sub>2</sub>] + ε<sub>N2O4</sub>[N<sub>2</sub>O<sub>4</sub>])</code>
+    </div>
+    <div>
+      <strong>Vista lateral</strong>
+      <span>O diâmetro e o percurso óptico mantêm-se constantes.</span>
+      <code>l = constante</code>
+    </div>
+  </section>
+
+  <p class="lab-footnote text-small text-muted">
+    Modelo didático idealizado: temperatura constante, comportamento ideal, cinética elementar reversível e grandezas normalizadas.
+  </p>
+  <p class="lab-footnote text-small text-muted">
+    Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar — agosto 2026. (Programação com recurso IA).
+  </p>
+</div>
+
+<style>
+  #no2LabApp {
+    --lab-gap: 1rem;
+    display: grid;
+    gap: var(--lab-gap);
+    width: 100%;
+    color: var(--foreground);
+  }
+
+  #no2LabApp * {
+    box-sizing: border-box;
+  }
+
+  #no2LabApp [hidden] {
+    display: none !important;
+  }
+
+  #no2LabApp h2 {
+    margin: 0;
+  }
+
+  #no2LabApp p {
+    margin: 0;
+  }
+
+  #no2LabApp sub {
+    line-height: 0;
+  }
+
+  #no2LabApp .lab-color-swatch {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  #no2LabApp .lab-color-no2 {
+    color: var(--viz-series-2);
+  }
+
+  #no2LabApp .lab-color-n2o4 {
+    color: var(--viz-series-1);
+  }
+
+  #no2LabApp .lab-color-beam {
+    color: var(--viz-series-3);
+  }
+
+  #no2LabApp .lab-color-structure {
+    color: var(--muted-foreground);
+  }
+
+  #no2LabApp .lab-command,
+  #no2LabApp .lab-section-heading,
+  #no2LabApp .lab-view-switch,
+  #no2LabApp .lab-actions,
+  #no2LabApp .lab-legend,
+  #no2LabApp .lab-chart-legend,
+  #no2LabApp .lab-optics,
+  #no2LabApp .lab-rate-bars > div {
+    display: flex;
+    align-items: center;
+  }
+
+  #no2LabApp .lab-command {
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  #no2LabApp .lab-reaction {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  #no2LabApp .lab-equation {
+    font-size: clamp(1.25rem, 4vw, 2rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+
+  #no2LabApp .lab-message {
+    padding-block: 0.3rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #no2LabApp .lab-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding-block: 0.25rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #no2LabApp .lab-metrics > div {
+    display: grid;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  #no2LabApp .lab-metrics span,
+  #no2LabApp .lab-metrics small {
+    color: var(--muted-foreground);
+  }
+
+  #no2LabApp .lab-metrics strong {
+    font-size: clamp(1rem, 2.6vw, 1.45rem);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #no2LabApp .lab-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(17rem, 0.75fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  #no2LabApp .lab-controls-column,
+  #no2LabApp .lab-analysis-grid,
+  #no2LabApp .lab-charts-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  #no2LabApp .lab-controls-column {
+    grid-template-columns: 1fr;
+  }
+
+  #no2LabApp .lab-charts-grid,
+  #no2LabApp .lab-analysis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #no2LabApp .lab-section-heading {
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+  }
+
+  #no2LabApp .lab-section-heading > div:first-child {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  #no2LabApp .lab-view-switch {
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  #no2LabApp .lab-vessel {
+    display: block;
+    width: 100%;
+    height: min(52vw, 430px);
+    min-height: 320px;
+    border-block: 1px solid var(--border);
+    background: color-mix(in srgb, var(--muted) 34%, transparent);
+  }
+
+  #no2LabApp .lab-legend,
+  #no2LabApp .lab-chart-legend {
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+    padding-top: 0.65rem;
+    color: var(--muted-foreground);
+  }
+
+  #no2LabApp .lab-legend span,
+  #no2LabApp .lab-chart-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  #no2LabApp .lab-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 999px;
+    background: var(--viz-series-2);
+  }
+
+  #no2LabApp .lab-dimer {
+    position: relative;
+    width: 1.15rem;
+    height: 0.7rem;
+  }
+
+  #no2LabApp .lab-dimer::before,
+  #no2LabApp .lab-dimer::after {
+    content: "";
+    position: absolute;
+    top: 0.08rem;
+    width: 0.62rem;
+    height: 0.62rem;
+    border: 2px solid var(--viz-series-1);
+    border-radius: 999px;
+  }
+
+  #no2LabApp .lab-dimer::before {
+    left: 0;
+  }
+
+  #no2LabApp .lab-dimer::after {
+    right: 0;
+  }
+
+  #no2LabApp .lab-beam {
+    width: 1.2rem;
+    border-top: 2px dashed var(--viz-series-3);
+  }
+
+  #no2LabApp .form-label {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+  }
+
+  #no2LabApp .form-label strong {
+    justify-self: end;
+    margin-top: -1.35rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #no2LabApp .lab-conditional-control {
+    display: contents;
+  }
+
+  #no2LabApp .lab-advanced {
+    margin-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.7rem;
+  }
+
+  #no2LabApp .lab-advanced summary {
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  #no2LabApp .lab-advanced-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 0.7rem;
+  }
+
+  #no2LabApp .lab-rate-bars {
+    display: grid;
+    gap: 0.65rem;
+    margin-top: 0.8rem;
+  }
+
+  #no2LabApp .lab-rate-bars > div {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(3rem, 1fr) 3.8rem;
+    gap: 0.5rem;
+  }
+
+  #no2LabApp .lab-rate-bars strong {
+    text-align: end;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #no2LabApp .lab-bar-track {
+    height: 0.5rem;
+    overflow: hidden;
+    background: var(--muted);
+    border-radius: 999px;
+  }
+
+  #no2LabApp .lab-bar-track i {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    transition: width 180ms ease;
+  }
+
+  #no2LabApp #forwardBar {
+    background: var(--viz-series-2);
+  }
+
+  #no2LabApp #reverseBar {
+    background: var(--viz-series-1);
+  }
+
+  #no2LabApp .lab-chart {
+    display: block;
+    width: 100%;
+    aspect-ratio: 620 / 280;
+    overflow: visible;
+  }
+
+  #no2LabApp .lab-chart .chart-grid {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  #no2LabApp .lab-chart .chart-axis {
+    stroke: var(--muted-foreground);
+    stroke-width: 1;
+  }
+
+  #no2LabApp .lab-chart .chart-label {
+    fill: var(--muted-foreground);
+    font-size: 12px;
+  }
+
+  #no2LabApp .lab-chart .chart-event {
+    stroke: var(--muted-foreground);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 5;
+  }
+
+  #no2LabApp .lab-chart .chart-no2,
+  #no2LabApp .lab-chart .chart-n2o4,
+  #no2LabApp .lab-chart .chart-q,
+  #no2LabApp .lab-chart .chart-k,
+  #no2LabApp .lab-chart .chart-reference {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  #no2LabApp .lab-chart .chart-no2 {
+    stroke: var(--viz-series-2);
+    stroke-width: 3;
+  }
+
+  #no2LabApp .lab-chart .chart-n2o4 {
+    stroke: var(--viz-series-1);
+    stroke-width: 3;
+  }
+
+  #no2LabApp .lab-chart .chart-q {
+    stroke: var(--viz-series-3);
+    stroke-width: 3;
+  }
+
+  #no2LabApp .lab-chart .chart-k {
+    stroke: var(--foreground);
+    stroke-width: 2;
+    stroke-dasharray: 8 5;
+  }
+
+  #no2LabApp .lab-chart .chart-reference {
+    stroke: var(--muted-foreground);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 5;
+  }
+
+  #no2LabApp .lab-line {
+    width: 1.3rem;
+    border-top: 3px solid;
+  }
+
+  #no2LabApp .lab-line-no2 {
+    border-color: var(--viz-series-2);
+  }
+
+  #no2LabApp .lab-line-n2o4 {
+    border-color: var(--viz-series-1);
+  }
+
+  #no2LabApp .lab-line-q {
+    border-color: var(--viz-series-3);
+  }
+
+  #no2LabApp .lab-line-k {
+    border-color: var(--foreground);
+    border-top-style: dashed;
+  }
+
+  #no2LabApp .lab-line-reference {
+    border-color: var(--muted-foreground);
+    border-top-style: dashed;
+  }
+
+  #no2LabApp .lab-conclusion {
+    margin-top: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  #no2LabApp .lab-question {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0.75rem 0;
+    padding: 0;
+    border: 0;
+  }
+
+  #no2LabApp .lab-optics {
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-block: 0.8rem;
+    border-block: 1px solid var(--border);
+  }
+
+  #no2LabApp .lab-optics > div {
+    display: grid;
+    gap: 0.25rem;
+    min-width: min(100%, 18rem);
+  }
+
+  #no2LabApp .lab-optics span {
+    color: var(--muted-foreground);
+  }
+
+  #no2LabApp .lab-footnote {
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    #no2LabApp .lab-main-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #no2LabApp .lab-controls-column {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    #no2LabApp .lab-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #no2LabApp .lab-metrics > div:last-child {
+      grid-column: 1 / -1;
+    }
+
+    #no2LabApp .lab-controls-column,
+    #no2LabApp .lab-charts-grid,
+    #no2LabApp .lab-analysis-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #no2LabApp .lab-section-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    #no2LabApp .lab-view-switch {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 480px) {
+    #no2LabApp .lab-actions {
+      width: 100%;
+    }
+
+    #no2LabApp .lab-actions .btn {
+      flex: 1 1 auto;
+    }
+
+    #no2LabApp .lab-advanced-grid {
+      grid-template-columns: 1fr;
+    }
+
+    #no2LabApp .lab-vessel {
+      height: 340px;
+      min-height: 0;
+    }
+
+    #no2LabApp .lab-rate-bars > div {
+      grid-template-columns: 4.8rem minmax(2.5rem, 1fr) 3.4rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #no2LabApp .lab-bar-track i {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+(function () {
+  "use strict";
+
+  var root = document.getElementById("no2LabApp");
+  if (!root) return;
+
+  var elements = {
+    compressBtn: root.querySelector("#compressBtn"),
+    playBtn: root.querySelector("#playBtn"),
+    stepBtn: root.querySelector("#stepBtn"),
+    resetBtn: root.querySelector("#resetBtn"),
+    phaseLabel: root.querySelector("#phaseLabel"),
+    phaseMessage: root.querySelector("#phaseMessage"),
+    vesselCanvas: root.querySelector("#vesselCanvas"),
+    topViewBtn: root.querySelector("#topViewBtn"),
+    sideViewBtn: root.querySelector("#sideViewBtn"),
+    compressionFactor: root.querySelector("#compressionFactor"),
+    compressionFactorValue: root.querySelector("#compressionFactorValue"),
+    compressionMode: root.querySelector("#compressionMode"),
+    durationControl: root.querySelector("#durationControl"),
+    compressionDuration: root.querySelector("#compressionDuration"),
+    compressionDurationValue: root.querySelector("#compressionDurationValue"),
+    simulationSpeed: root.querySelector("#simulationSpeed"),
+    initialNO2: root.querySelector("#initialNO2"),
+    initialN2O4: root.querySelector("#initialN2O4"),
+    forwardRate: root.querySelector("#forwardRate"),
+    epsilonNO2: root.querySelector("#epsilonNO2"),
+    epsilonN2O4: root.querySelector("#epsilonN2O4"),
+    concentrationChart: root.querySelector("#concentrationChart"),
+    equilibriumChart: root.querySelector("#equilibriumChart"),
+    interpretationText: root.querySelector("#interpretationText"),
+    forwardBar: root.querySelector("#forwardBar"),
+    reverseBar: root.querySelector("#reverseBar"),
+    forwardRateValue: root.querySelector("#forwardRateValue"),
+    reverseRateValue: root.querySelector("#reverseRateValue"),
+    checkPredictionBtn: root.querySelector("#checkPredictionBtn"),
+    predictionFeedback: root.querySelector("#predictionFeedback"),
+    no2Swatch: root.querySelector("#no2ColorSwatch"),
+    n2o4Swatch: root.querySelector("#n2o4ColorSwatch"),
+    beamSwatch: root.querySelector("#beamColorSwatch"),
+    structureSwatch: root.querySelector("#structureColorSwatch")
+  };
+
+  var metricIds = [
+    "metricVolume", "metricNO2", "metricN2O4", "metricQK",
+    "metricDirection", "metricAbsorbance", "metricAbsorbanceRatio"
+  ];
+  metricIds.forEach(function (id) {
+    elements[id] = root.querySelector("#" + id);
+  });
+
+  var tableIds = [
+    "tableInitialNO2", "tableInitialN2O4", "tableImmediateNO2",
+    "tableImmediateN2O4", "tableImmediateQK", "tableFinalNO2",
+    "tableFinalN2O4", "inequalityStatement", "initialRow",
+    "immediateRow", "finalRow"
+  ];
+  tableIds.forEach(function (id) {
+    elements[id] = root.querySelector("#" + id);
+  });
+
+  var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var formatter3 = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  var formatter2 = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var formatter1 = new Intl.NumberFormat("pt-PT", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function numericValue(input, fallback) {
+    var value = Number(input.value);
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  function readConfig() {
+    var a = clamp(numericValue(elements.initialNO2, 1), 0.05, 4);
+    var b = clamp(numericValue(elements.initialN2O4, 0.5), 0.001, 3);
+    var kd = clamp(numericValue(elements.forwardRate, 0.45), 0.01, 5);
+    return {
+      a: a,
+      b: b,
+      Vi: 1,
+      r: clamp(numericValue(elements.compressionFactor, 2), 1.01, 5),
+      kd: kd,
+      Kc: b / (a * a),
+      epsilonA: clamp(numericValue(elements.epsilonNO2, 0.45), 0, 3),
+      epsilonB: clamp(numericValue(elements.epsilonN2O4, 0.02), 0, 3),
+      mode: elements.compressionMode.value,
+      duration: clamp(numericValue(elements.compressionDuration, 3), 0.1, 20),
+      speed: clamp(numericValue(elements.simulationSpeed, 1), 0.1, 8)
+    };
+  }
+
+  var config = readConfig();
+  var state;
+  var history = [];
+  var particles = [];
+  var lastFrame = performance.now();
+  var lastHistoryTime = -1;
+  var lastAnnouncedPhase = "";
+  var animationFrame = 0;
+
+  function seededParticles() {
+    particles = [];
+    var seed = 87321;
+    function random() {
+      seed = (seed * 48271) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+    for (var i = 0; i < 72; i += 1) {
+      particles.push({
+        x: 0.04 + random() * 0.92,
+        y: 0.04 + random() * 0.92,
+        vx: (random() - 0.5) * 0.16,
+        vy: (random() - 0.5) * 0.16,
+        angle: random() * Math.PI * 2,
+        spin: (random() - 0.5) * 1.4
+      });
+    }
+  }
+
+  function currentConcentrations() {
+    return {
+      A: state.nA / state.V,
+      B: state.nB / state.V
+    };
+  }
+
+  function currentRates() {
+    var c = currentConcentrations();
+    var ki = config.kd / config.Kc;
+    return {
+      forward: config.kd * c.A * c.A,
+      reverse: ki * c.B,
+      net: config.kd * c.A * c.A - ki * c.B
+    };
+  }
+
+  function currentOptics() {
+    var c = currentConcentrations();
+    var path = state.view === "top" ? state.V / config.Vi : 1;
+    var absorbance = path * (config.epsilonA * c.A + config.epsilonB * c.B);
+    var initial = config.epsilonA * config.a + config.epsilonB * config.b;
+    return {
+      path: path,
+      absorbance: absorbance,
+      initial: initial,
+      ratio: initial > 0 ? absorbance / initial : 1
+    };
+  }
+
+  function qValue() {
+    var c = currentConcentrations();
+    return c.A > 0 ? c.B / (c.A * c.A) : 0;
+  }
+
+  function exactFinalState() {
+    var totalUnits = config.a * config.Vi + 2 * config.b * config.Vi;
+    var Vf = config.Vi / config.r;
+    var densityUnits = totalUnits / Vf;
+    var disc = Math.sqrt(1 + 8 * config.Kc * densityUnits);
+    var finalA = (disc - 1) / (4 * config.Kc);
+    var finalB = config.Kc * finalA * finalA;
+    return { A: finalA, B: finalB, V: Vf };
+  }
+
+  function phaseCopy() {
+    if (state.phase === "initial") {
+      return {
+        label: "Equilíbrio inicial",
+        message: "O sistema está em equilíbrio. Ajuste os parâmetros ou inicie a compressão."
+      };
+    }
+    if (state.phase === "compressing") {
+      if (config.mode === "instant") {
+        return {
+          label: "Compressão física",
+          message: "O volume diminui e as concentrações aumentam. A reação está momentaneamente suspensa para separar visualmente as duas etapas."
+        };
+      }
+      return {
+        label: "Compressão gradual",
+        message: "O volume diminui enquanto a reação química já responde à alteração das concentrações."
+      };
+    }
+    if (state.phase === "relaxing") {
+      if (!state.running) {
+        return {
+          label: "Evolução em pausa",
+          message: "A simulação está em pausa. Continue ou avance um pequeno intervalo."
+        };
+      }
+      return {
+        label: "Reajuste químico",
+        message: "Q₍c₎ < K₍c₎: há formação líquida de N₂O₄ e consumo de parte do NO₂."
+      };
+    }
+    return {
+      label: "Novo equilíbrio",
+      message: "Q₍c₎ voltou a K₍c₎. A concentração de NO₂ diminuiu após o salto, mas permanece acima do valor inicial."
+    };
+  }
+
+  function resetSimulation() {
+    config = readConfig();
+    var totalUnits = config.a * config.Vi + 2 * config.b * config.Vi;
+    state = {
+      t: 0,
+      V: config.Vi,
+      nA: config.a * config.Vi,
+      nB: config.b * config.Vi,
+      totalUnits: totalUnits,
+      phase: "initial",
+      running: false,
+      compressionProgress: 0,
+      compressionElapsed: 0,
+      view: state && state.view ? state.view : "top",
+      eventTime: null,
+      equilibriumStableFor: 0
+    };
+    history = [];
+    lastHistoryTime = -1;
+    addHistoryPoint(true);
+    elements.compressBtn.disabled = false;
+    elements.playBtn.disabled = true;
+    elements.stepBtn.disabled = true;
+    elements.playBtn.textContent = "Pausa";
+    elements.predictionFeedback.textContent = "";
+    root.querySelectorAll('input[name="prediction"]').forEach(function (radio) {
+      radio.checked = false;
+    });
+    updateParameterLabels();
+    updatePredictionTable();
+    updateAll(true);
+  }
+
+  function startCompression() {
+    if (state.phase !== "initial") return;
+    config = readConfig();
+    state.phase = "compressing";
+    state.running = true;
+    state.compressionProgress = 0;
+    state.compressionElapsed = 0;
+    state.eventTime = state.t;
+    state.equilibriumStableFor = 0;
+    elements.compressBtn.disabled = true;
+    elements.playBtn.disabled = false;
+    elements.stepBtn.disabled = true;
+    addHistoryPoint(true);
+    announcePhase();
+  }
+
+  function integrateMoles(dt) {
+    var maxStep = 0.008;
+    var remaining = Math.max(0, dt);
+    var ki = config.kd / config.Kc;
+    var total = state.totalUnits;
+    var V = state.V;
+
+    function derivative(nB) {
+      var boundedB = clamp(nB, 0, total / 2);
+      var nA = total - 2 * boundedB;
+      var cA = nA / V;
+      var cB = boundedB / V;
+      return V * (config.kd * cA * cA - ki * cB);
+    }
+
+    while (remaining > 0) {
+      var h = Math.min(maxStep, remaining);
+      var y = state.nB;
+      var k1 = derivative(y);
+      var k2 = derivative(y + 0.5 * h * k1);
+      var k3 = derivative(y + 0.5 * h * k2);
+      var k4 = derivative(y + h * k3);
+      state.nB = clamp(y + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6, 0, total / 2);
+      state.nA = total - 2 * state.nB;
+      remaining -= h;
+    }
+  }
+
+  function advanceSimulation(dtWall) {
+    if (!state.running) return;
+    var dt = dtWall * config.speed;
+    state.t += dt;
+
+    if (state.phase === "compressing") {
+      var visualDuration = config.mode === "instant" ? (prefersReducedMotion ? 0.05 : 0.9) : config.duration;
+      state.compressionElapsed += dt;
+      state.compressionProgress = clamp(state.compressionElapsed / visualDuration, 0, 1);
+      var eased = state.compressionProgress < 0.5
+        ? 2 * state.compressionProgress * state.compressionProgress
+        : 1 - Math.pow(-2 * state.compressionProgress + 2, 2) / 2;
+      state.V = config.Vi + (config.Vi / config.r - config.Vi) * eased;
+
+      if (config.mode === "gradual") {
+        integrateMoles(dt);
+      }
+
+      if (state.compressionProgress >= 1) {
+        state.V = config.Vi / config.r;
+        state.phase = "relaxing";
+        elements.stepBtn.disabled = false;
+        addHistoryPoint(true);
+        announcePhase();
+      }
+    } else if (state.phase === "relaxing") {
+      integrateMoles(dt);
+      var rates = currentRates();
+      var relativeNet = Math.abs(rates.net) / Math.max(rates.forward, rates.reverse, 0.0001);
+      var relativeQ = Math.abs(qValue() - config.Kc) / config.Kc;
+      if (relativeNet < 0.0008 && relativeQ < 0.0008) {
+        state.equilibriumStableFor += dt;
+      } else {
+        state.equilibriumStableFor = 0;
+      }
+      if (state.equilibriumStableFor > 0.35) {
+        var solvedState = exactFinalState();
+        state.nA = solvedState.A * state.V;
+        state.nB = solvedState.B * state.V;
+        state.phase = "equilibrium";
+        state.running = false;
+        elements.playBtn.disabled = true;
+        elements.stepBtn.disabled = true;
+        elements.playBtn.textContent = "Pausa";
+        addHistoryPoint(true);
+        announcePhase();
+      }
+    }
+
+    addHistoryPoint(false);
+  }
+
+  function addHistoryPoint(force) {
+    if (!force && state.t - lastHistoryTime < 0.055) return;
+    var c = currentConcentrations();
+    var optics = currentOptics();
+    history.push({
+      t: state.t,
+      A: c.A,
+      B: c.B,
+      Q: qValue(),
+      K: config.Kc,
+      absorbance: optics.absorbance,
+      V: state.V
+    });
+    lastHistoryTime = state.t;
+    if (history.length > 600) history.shift();
+  }
+
+  function togglePlay() {
+    if (state.phase !== "relaxing") return;
+    state.running = !state.running;
+    elements.playBtn.textContent = state.running ? "Pausa" : "Continuar";
+    elements.stepBtn.disabled = state.running;
+    announcePhase();
+  }
+
+  function stepSimulation() {
+    if (state.phase !== "relaxing" || state.running) return;
+    state.running = true;
+    advanceSimulation(0.1 / config.speed);
+    state.running = false;
+    addHistoryPoint(true);
+    updateAll(true);
+  }
+
+  function announcePhase() {
+    var copy = phaseCopy();
+    elements.phaseLabel.textContent = copy.label;
+    elements.phaseMessage.textContent = copy.message;
+    lastAnnouncedPhase = state.phase + (state.running ? "-running" : "-paused");
+  }
+
+  function updateParameterLabels() {
+    elements.compressionFactorValue.textContent = formatter2.format(config.r) + "×";
+    elements.compressionDurationValue.textContent = formatter1.format(config.duration) + " u.t.";
+    elements.durationControl.hidden = config.mode !== "gradual";
+  }
+
+  function updateMetrics() {
+    var c = currentConcentrations();
+    var Q = qValue();
+    var ratio = Q / config.Kc;
+    var optics = currentOptics();
+    var rates = currentRates();
+    elements.metricVolume.textContent = formatter3.format(state.V / config.Vi);
+    elements.metricNO2.textContent = formatter3.format(c.A);
+    elements.metricN2O4.textContent = formatter3.format(c.B);
+    elements.metricQK.textContent = formatter3.format(ratio);
+    elements.metricAbsorbance.textContent = formatter3.format(optics.absorbance);
+    elements.metricAbsorbanceRatio.textContent = Math.round(optics.ratio * 100) + "% da inicial";
+
+    if (Math.abs(ratio - 1) < 0.002) {
+      elements.metricDirection.textContent = "equilíbrio";
+    } else if (ratio < 1) {
+      elements.metricDirection.textContent = "sentido direto";
+    } else {
+      elements.metricDirection.textContent = "sentido inverso";
+    }
+
+    var maxRate = Math.max(rates.forward, rates.reverse, 0.0001);
+    elements.forwardBar.style.width = (rates.forward / maxRate * 100).toFixed(1) + "%";
+    elements.reverseBar.style.width = (rates.reverse / maxRate * 100).toFixed(1) + "%";
+    elements.forwardRateValue.textContent = formatter3.format(rates.forward);
+    elements.reverseRateValue.textContent = formatter3.format(rates.reverse);
+
+    if (state.phase === "initial") {
+      elements.interpretationText.innerHTML = "Antes da compressão, Q<sub>c</sub> = K<sub>c</sub> e as velocidades direta e inversa são iguais.";
+    } else if (state.phase === "compressing" && config.mode === "instant") {
+      elements.interpretationText.innerHTML = "As quantidades de matéria permanecem constantes; a diminuição do volume aumenta imediatamente ambas as concentrações.";
+    } else if (ratio < 0.998) {
+      elements.interpretationText.innerHTML = "Q<sub>c</sub> &lt; K<sub>c</sub>: v<sub>direta</sub> &gt; v<sub>inversa</sub>. Forma-se mais N<sub>2</sub>O<sub>4</sub>.";
+    } else if (ratio > 1.002) {
+      elements.interpretationText.innerHTML = "Q<sub>c</sub> &gt; K<sub>c</sub>: predomina temporariamente o sentido inverso.";
+    } else {
+      elements.interpretationText.innerHTML = "Q<sub>c</sub> ≈ K<sub>c</sub>: as velocidades voltaram a igualar-se e estabeleceu-se um novo equilíbrio dinâmico.";
+    }
+  }
+
+  function updatePredictionTable() {
+    var finalState = exactFinalState();
+    var immediateA = config.a * config.r;
+    var immediateB = config.b * config.r;
+    elements.tableInitialNO2.textContent = formatter3.format(config.a);
+    elements.tableInitialN2O4.textContent = formatter3.format(config.b);
+    elements.tableImmediateNO2.textContent = formatter3.format(immediateA);
+    elements.tableImmediateN2O4.textContent = formatter3.format(immediateB);
+    elements.tableImmediateQK.textContent = formatter3.format(1 / config.r);
+    elements.tableFinalNO2.textContent = formatter3.format(finalState.A);
+    elements.tableFinalN2O4.textContent = formatter3.format(finalState.B);
+    elements.inequalityStatement.innerHTML =
+      formatter3.format(config.a) + " &lt; " +
+      formatter3.format(finalState.A) + " &lt; " +
+      formatter3.format(immediateA) +
+      " — a concentração final de NO<sub>2</sub> permanece acima da inicial.";
+  }
+
+  function updateRowHighlight() {
+    [elements.initialRow, elements.immediateRow, elements.finalRow].forEach(function (row) {
+      row.classList.remove("is-selected");
+    });
+    if (state.phase === "initial") elements.initialRow.classList.add("is-selected");
+    if (state.phase === "compressing") elements.immediateRow.classList.add("is-selected");
+    if (state.phase === "equilibrium") elements.finalRow.classList.add("is-selected");
+  }
+
+  function updateViewButtons() {
+    var topSelected = state.view === "top";
+    elements.topViewBtn.setAttribute("aria-pressed", String(topSelected));
+    elements.sideViewBtn.setAttribute("aria-pressed", String(!topSelected));
+    elements.topViewBtn.classList.toggle("is-selected", topSelected);
+    elements.topViewBtn.classList.toggle("btn-ghost", !topSelected);
+    elements.sideViewBtn.classList.toggle("is-selected", !topSelected);
+    elements.sideViewBtn.classList.toggle("btn-ghost", topSelected);
+  }
+
+  function updateParticles(dtWall) {
+    var motionScale = prefersReducedMotion ? 0 : 1;
+    particles.forEach(function (particle) {
+      particle.x += particle.vx * dtWall * motionScale;
+      particle.y += particle.vy * dtWall * motionScale;
+      particle.angle += particle.spin * dtWall * motionScale;
+      if (particle.x < 0.025 || particle.x > 0.975) {
+        particle.vx *= -1;
+        particle.x = clamp(particle.x, 0.025, 0.975);
+      }
+      if (particle.y < 0.035 || particle.y > 0.965) {
+        particle.vy *= -1;
+        particle.y = clamp(particle.y, 0.035, 0.965);
+      }
+    });
+  }
+
+  function canvasColors() {
+    return {
+      no2: getComputedStyle(elements.no2Swatch).color,
+      n2o4: getComputedStyle(elements.n2o4Swatch).color,
+      beam: getComputedStyle(elements.beamSwatch).color,
+      structure: getComputedStyle(elements.structureSwatch).color
+    };
+  }
+
+  function drawVessel() {
+    var canvas = elements.vesselCanvas;
+    var rect = canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var width = Math.max(320, rect.width);
+    var height = Math.max(300, rect.height);
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    var colors = canvasColors();
+    var left = width * 0.14;
+    var right = width * 0.76;
+    var initialTop = height * 0.12;
+    var bottom = height * 0.88;
+    var volumeRatio = state.V / config.Vi;
+    var gasHeight = (bottom - initialTop) * volumeRatio;
+    var top = bottom - gasHeight;
+    var pistonY = top;
+    var chamberWidth = right - left;
+    var optics = currentOptics();
+    var intensity = clamp(0.04 + (1 - Math.pow(10, -optics.absorbance)) * 0.44, 0.04, 0.48);
+
+    ctx.save();
+    ctx.globalAlpha = intensity;
+    ctx.fillStyle = colors.no2;
+    ctx.fillRect(left, top, chamberWidth, bottom - top);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = colors.structure;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(left, initialTop);
+    ctx.lineTo(left, bottom);
+    ctx.quadraticCurveTo(left, bottom + 12, left + 12, bottom + 12);
+    ctx.lineTo(right - 12, bottom + 12);
+    ctx.quadraticCurveTo(right, bottom + 12, right, bottom);
+    ctx.lineTo(right, initialTop);
+    ctx.stroke();
+
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(left - 8, pistonY);
+    ctx.lineTo(right + 8, pistonY);
+    ctx.stroke();
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo((left + right) / 2, pistonY);
+    ctx.lineTo((left + right) / 2, Math.max(16, pistonY - height * 0.13));
+    ctx.stroke();
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo((left + right) / 2 - width * 0.09, Math.max(16, pistonY - height * 0.13));
+    ctx.lineTo((left + right) / 2 + width * 0.09, Math.max(16, pistonY - height * 0.13));
+    ctx.stroke();
+    ctx.restore();
+
+    var visualUnits = particles.length;
+    var dimerCount = clamp(Math.round(state.nB / state.totalUnits * visualUnits), 0, Math.floor(visualUnits / 2));
+    var monomerCount = visualUnits - 2 * dimerCount;
+    var objectCount = dimerCount + monomerCount;
+    var radius = clamp(width / 110, 3.8, 6.2);
+
+    for (var i = 0; i < objectCount; i += 1) {
+      var particle = particles[i];
+      var x = left + radius * 2 + particle.x * (chamberWidth - radius * 4);
+      var y = top + radius * 2 + particle.y * Math.max(radius * 2, bottom - top - radius * 4);
+      if (i < dimerCount) {
+        var dx = Math.cos(particle.angle) * radius * 0.8;
+        var dy = Math.sin(particle.angle) * radius * 0.8;
+        ctx.save();
+        ctx.strokeStyle = colors.n2o4;
+        ctx.fillStyle = colors.n2o4;
+        ctx.globalAlpha = 0.82;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - dx, y - dy);
+        ctx.lineTo(x + dx, y + dy);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x - dx, y - dy, radius * 0.72, 0, Math.PI * 2);
+        ctx.arc(x + dx, y + dy, radius * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.fillStyle = colors.no2;
+        ctx.globalAlpha = 0.92;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.55;
+        ctx.strokeStyle = colors.structure;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    ctx.save();
+    ctx.strokeStyle = colors.beam;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([7, 6]);
+    if (state.view === "top") {
+      var beamX = (left + right) / 2 + chamberWidth * 0.26;
+      ctx.beginPath();
+      ctx.moveTo(beamX, top - 18);
+      ctx.lineTo(beamX, bottom + 20);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(beamX, bottom + 20);
+      ctx.lineTo(beamX - 6, bottom + 9);
+      ctx.lineTo(beamX + 6, bottom + 9);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      var beamY = top + (bottom - top) * 0.58;
+      ctx.beginPath();
+      ctx.moveTo(left - 28, beamY);
+      ctx.lineTo(right + 28, beamY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(right + 28, beamY);
+      ctx.lineTo(right + 17, beamY - 6);
+      ctx.lineTo(right + 17, beamY + 6);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    var panelX = width * 0.80;
+    var panelWidth = width * 0.17;
+    ctx.save();
+    ctx.fillStyle = colors.structure;
+    ctx.font = "500 13px system-ui, sans-serif";
+    ctx.fillText(state.view === "top" ? "Percurso axial" : "Percurso lateral", panelX, height * 0.22);
+    ctx.font = "12px system-ui, sans-serif";
+    ctx.globalAlpha = 0.86;
+    ctx.fillText("l/lᵢ = " + formatter3.format(optics.path), panelX, height * 0.31);
+    ctx.fillText("A/Aᵢ = " + formatter3.format(optics.ratio), panelX, height * 0.39);
+    ctx.fillText("V/Vᵢ = " + formatter3.format(volumeRatio), panelX, height * 0.47);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors.structure;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(panelX, height * 0.56, panelWidth, height * 0.22);
+    ctx.globalAlpha = clamp(optics.ratio * 0.36, 0.05, 0.56);
+    ctx.fillStyle = colors.no2;
+    ctx.fillRect(panelX, height * 0.56, panelWidth, height * 0.22);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = colors.structure;
+    ctx.fillText("cor prevista", panelX, height * 0.84);
+    ctx.restore();
+  }
+
+  function chartPath(points, xScale, yScale, key) {
+    if (!points.length) return "";
+    return points.map(function (point, index) {
+      var command = index === 0 ? "M" : "L";
+      return command + xScale(point.t).toFixed(2) + "," + yScale(point[key]).toFixed(2);
+    }).join(" ");
+  }
+
+  function renderChart(svg, type) {
+    var width = 620;
+    var height = 280;
+    var margin = { left: 52, right: 22, top: 18, bottom: 42 };
+    var plotWidth = width - margin.left - margin.right;
+    var plotHeight = height - margin.top - margin.bottom;
+    var points = history.length ? history : [{ t: 0, A: config.a, B: config.b, Q: config.Kc, K: config.Kc }];
+    var minT = points[0].t;
+    var maxT = Math.max(points[points.length - 1].t, minT + 1);
+    var values = type === "concentration"
+      ? points.reduce(function (all, point) { all.push(point.A, point.B); return all; }, [config.a, config.a * config.r])
+      : points.reduce(function (all, point) { all.push(point.Q, point.K); return all; }, [config.Kc]);
+    var maxY = Math.max.apply(null, values.concat([0.1])) * 1.16;
+    var xScale = function (value) {
+      return margin.left + (value - minT) / (maxT - minT) * plotWidth;
+    };
+    var yScale = function (value) {
+      return margin.top + plotHeight - value / maxY * plotHeight;
+    };
+
+    var markup = [];
+    for (var i = 0; i <= 4; i += 1) {
+      var y = margin.top + plotHeight * i / 4;
+      var tickValue = maxY * (1 - i / 4);
+      markup.push("<line class='chart-grid' x1='" + margin.left + "' y1='" + y + "' x2='" + (width - margin.right) + "' y2='" + y + "'></line>");
+      markup.push("<text class='chart-label' x='" + (margin.left - 9) + "' y='" + (y + 4) + "' text-anchor='end'>" + formatter2.format(tickValue) + "</text>");
+    }
+    for (var j = 0; j <= 4; j += 1) {
+      var x = margin.left + plotWidth * j / 4;
+      var timeValue = minT + (maxT - minT) * j / 4;
+      markup.push("<line class='chart-grid' x1='" + x + "' y1='" + margin.top + "' x2='" + x + "' y2='" + (height - margin.bottom) + "'></line>");
+      markup.push("<text class='chart-label' x='" + x + "' y='" + (height - 17) + "' text-anchor='middle'>" + formatter1.format(timeValue) + "</text>");
+    }
+    markup.push("<line class='chart-axis' x1='" + margin.left + "' y1='" + (height - margin.bottom) + "' x2='" + (width - margin.right) + "' y2='" + (height - margin.bottom) + "'></line>");
+    markup.push("<line class='chart-axis' x1='" + margin.left + "' y1='" + margin.top + "' x2='" + margin.left + "' y2='" + (height - margin.bottom) + "'></line>");
+    markup.push("<text class='chart-label' x='" + (margin.left + plotWidth / 2) + "' y='" + (height - 2) + "' text-anchor='middle'>tempo relativo</text>");
+
+    if (state.eventTime !== null && state.eventTime >= minT && state.eventTime <= maxT) {
+      var eventX = xScale(state.eventTime);
+      markup.push("<line class='chart-event' x1='" + eventX + "' y1='" + margin.top + "' x2='" + eventX + "' y2='" + (height - margin.bottom) + "'></line>");
+      markup.push("<text class='chart-label' x='" + (eventX + 5) + "' y='" + (margin.top + 13) + "'>compressão</text>");
+    }
+
+    if (type === "concentration") {
+      markup.push("<path class='chart-reference' d='M" + margin.left + "," + yScale(config.a).toFixed(2) + " L" + (width - margin.right) + "," + yScale(config.a).toFixed(2) + "'></path>");
+      markup.push("<path class='chart-no2' d='" + chartPath(points, xScale, yScale, "A") + "'></path>");
+      markup.push("<path class='chart-n2o4' d='" + chartPath(points, xScale, yScale, "B") + "'></path>");
+      var current = points[points.length - 1];
+      markup.push("<circle cx='" + xScale(current.t) + "' cy='" + yScale(current.A) + "' r='4' fill='var(--viz-series-2)'></circle>");
+      markup.push("<circle cx='" + xScale(current.t) + "' cy='" + yScale(current.B) + "' r='4' fill='var(--viz-series-1)'></circle>");
+    } else {
+      markup.push("<path class='chart-q' d='" + chartPath(points, xScale, yScale, "Q") + "'></path>");
+      markup.push("<path class='chart-k' d='" + chartPath(points, xScale, yScale, "K") + "'></path>");
+      var currentEq = points[points.length - 1];
+      markup.push("<circle cx='" + xScale(currentEq.t) + "' cy='" + yScale(currentEq.Q) + "' r='4' fill='var(--viz-series-3)'></circle>");
+    }
+    svg.innerHTML = markup.join("");
+  }
+
+  function updateAll(forceCharts) {
+    var phaseKey = state.phase + (state.running ? "-running" : "-paused");
+    if (phaseKey !== lastAnnouncedPhase) announcePhase();
+    updateMetrics();
+    updateRowHighlight();
+    updateViewButtons();
+    drawVessel();
+    if (forceCharts || animationFrame % 4 === 0) {
+      renderChart(elements.concentrationChart, "concentration");
+      renderChart(elements.equilibriumChart, "equilibrium");
+    }
+  }
+
+  function handleParameterChange() {
+    config = readConfig();
+    updateParameterLabels();
+    resetSimulation();
+  }
+
+  function setView(view) {
+    state.view = view;
+    updateAll(true);
+  }
+
+  function checkPrediction() {
+    var selected = root.querySelector('input[name="prediction"]:checked');
+    if (!selected) {
+      elements.predictionFeedback.textContent = "Selecione primeiro uma previsão.";
+      elements.predictionFeedback.classList.remove("text-destructive");
+      return;
+    }
+    if (selected.value === "between") {
+      elements.predictionFeedback.textContent = "Correto. A reação consome parte do aumento, mas não todo.";
+      elements.predictionFeedback.classList.remove("text-destructive");
+    } else {
+      elements.predictionFeedback.textContent = "Ainda não. Compare os três valores da tabela e tente novamente.";
+      elements.predictionFeedback.classList.add("text-destructive");
+    }
+  }
+
+  function frame(now) {
+    var dtWall = clamp((now - lastFrame) / 1000, 0, 0.05);
+    lastFrame = now;
+    animationFrame += 1;
+    updateParticles(dtWall);
+    advanceSimulation(dtWall);
+    updateAll(false);
+    requestAnimationFrame(frame);
+  }
+
+  elements.compressBtn.addEventListener("click", startCompression);
+  elements.playBtn.addEventListener("click", togglePlay);
+  elements.stepBtn.addEventListener("click", stepSimulation);
+  elements.resetBtn.addEventListener("click", resetSimulation);
+  elements.topViewBtn.addEventListener("click", function () { setView("top"); });
+  elements.sideViewBtn.addEventListener("click", function () { setView("side"); });
+  elements.checkPredictionBtn.addEventListener("click", checkPrediction);
+
+  [
+    elements.compressionFactor,
+    elements.compressionMode,
+    elements.compressionDuration,
+    elements.initialNO2,
+    elements.initialN2O4,
+    elements.forwardRate,
+    elements.epsilonNO2,
+    elements.epsilonN2O4
+  ].forEach(function (control) {
+    control.addEventListener("change", handleParameterChange);
+  });
+
+  elements.compressionFactor.addEventListener("input", function () {
+    elements.compressionFactorValue.textContent = formatter2.format(numericValue(elements.compressionFactor, 2)) + "×";
+  });
+  elements.compressionDuration.addEventListener("input", function () {
+    elements.compressionDurationValue.textContent = formatter1.format(numericValue(elements.compressionDuration, 3)) + " u.t.";
+  });
+  elements.simulationSpeed.addEventListener("change", function () {
+    config.speed = clamp(numericValue(elements.simulationSpeed, 1), 0.1, 8);
+  });
+
+  window.addEventListener("resize", function () {
+    drawVessel();
+  });
+
+  seededParticles();
+  resetSimulation();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

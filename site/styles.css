@@ -404,6 +404,21 @@ main { overflow: hidden; }
 .duel-icon::before { left: 9px; top: 24px; width: 23px; height: 23px; border-radius: 50%; background: #4cd4ee; box-shadow: 31px 0 0 #ed7382; }
 .duel-icon::after { left: 21px; top: 25px; width: 31px; height: 20px; border-top: 2px dashed var(--amber); border-radius: 50%; transform: rotate(-17deg); }
 
+.standalone-apps { border-top: 1px solid var(--line); }
+.app-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+.app-card { display: grid; grid-template-columns: minmax(180px, .72fr) minmax(0, 1fr); border: 1px solid rgba(150, 205, 233, .16); border-radius: 24px; background: linear-gradient(145deg, rgba(18, 43, 66, .9), rgba(7, 20, 34, .9)); overflow: hidden; }
+.app-visual { min-height: 275px; background: #e7ecf4; overflow: hidden; }
+.app-visual img { width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 260ms ease; }
+.app-card:hover .app-visual img { transform: scale(1.025); }
+.app-copy { display: flex; flex-direction: column; padding: 1.5rem; }
+.app-copy > span { color: var(--green); font-size: .69rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.app-copy h3 { margin: .45rem 0 .6rem; font-size: 1.45rem; line-height: 1.15; }
+.app-copy p { margin: 0 0 1.2rem; color: var(--muted); font-size: .91rem; }
+.app-copy a { margin-top: auto; color: var(--cyan); font-size: .88rem; font-weight: 780; text-decoration: none; }
+.app-copy a:hover { text-decoration: underline; }
+.chemistry-card { border-color: rgba(255, 209, 102, .23); background: linear-gradient(145deg, rgba(54, 42, 38, .94), rgba(17, 27, 38, .94)); }
+.chemistry-card .app-copy > span { color: var(--amber); }
+
 .how { border-top: 1px solid var(--line); }
 .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .steps article { padding: 1.45rem; border-left: 1px solid rgba(94,231,247,.26); background: linear-gradient(90deg, rgba(94,231,247,.035), transparent); }
@@ -471,6 +486,7 @@ footer {
   .hero-visual { min-height: 480px; }
   .feature { grid-template-columns: 1fr; }
   .feature-art { order: 2; }
+  .app-grid { grid-template-columns: 1fr; }
   .experience-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .steps { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .install { grid-template-columns: 1fr; }
@@ -492,6 +508,8 @@ footer {
   .planet-b { right: 5%; top: 25%; }
   .moon-a, .moon-b { transform-origin: 10px 78px; }
   .experience-grid, .steps, .privacy-band { grid-template-columns: 1fr; }
+  .app-card { grid-template-columns: 1fr; }
+  .app-visual { min-height: 235px; max-height: 360px; }
   .privacy-band div + div { border-left: 0; border-top: 1px solid rgba(155,209,236,.12); }
   .experience-card { min-height: 290px; }
   .project { grid-template-columns: 1fr; align-items: start; }

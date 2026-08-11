@@ -1,0 +1,48 @@
+name: Validar Laboratório NO2 N2O4
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/laboratorio-no2-n2o4/**'
+      - 'site/laboratorio-no2-n2o4/**'
+      - '.github/workflows/laboratorio-no2-n2o4.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/laboratorio-no2-n2o4/**'
+      - 'site/laboratorio-no2-n2o4/**'
+      - '.github/workflows/laboratorio-no2-n2o4.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Executar testes científicos e estruturais
+        working-directory: apps/laboratorio-no2-n2o4
+        run: npm test
+
+      - name: Validar aplicação offline
+        working-directory: apps/laboratorio-no2-n2o4
+        run: npm run validate
+
+      - name: Verificar publicação e pacote
+        shell: bash
+        run: |
+          cmp apps/laboratorio-no2-n2o4/index.html site/laboratorio-no2-n2o4/app/index.html
+          test -f site/laboratorio-no2-n2o4/screenshots/01-simulacao.png
+          test -f site/laboratorio-no2-n2o4/screenshots/02-novo-equilibrio.png
+          test -f site/laboratorio-no2-n2o4/screenshots/03-vista-lateral.png
+          unzip -t apps/laboratorio-no2-n2o4/downloads/Laboratorio-NO2-N2O4-v1.0.0.zip
+          cd apps/laboratorio-no2-n2o4/downloads
+          sha256sum -c Laboratorio-NO2-N2O4-v1.0.0-SHA256.txt
