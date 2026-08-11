@@ -10,7 +10,7 @@ Plataforma modular de experiências científicas controladas por gestos, prepara
 
 Aplicação pedagógica Android para explorar visualmente os vetores velocidade e aceleração. Inclui uma esfera controlada pela inclinação do telemóvel, desafios em pistas e um modo em que o utilizador desenha a trajetória que a esfera irá percorrer, com decomposição vetorial, pausa e slow motion.
 
-- [**Página de divulgação da Esfera Vetorial**](https://cmdbras-lab.github.io/ccv-virtual-experiments/)
+- [**Página de divulgação da Esfera Vetorial**](https://cmdbras-lab.github.io/ccv-virtual-experiments/esfera-vetorial/)
 - [**Projeto, documentação e screenshots**](apps/esfera-vetorial/)
 - [**Descarregar Esfera Vetorial v0.2.2 (APK)**](apps/esfera-vetorial/downloads/EsferaVetorial-v0.2.2.apk)
 
