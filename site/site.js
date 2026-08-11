@@ -5,10 +5,11 @@
   const releasesPage = `https://github.com/${repository}/releases/latest`;
   const latestApi = `https://api.github.com/repos/${repository}/releases/latest`;
 
+  const scriptBase = new URL('./', document.currentScript?.src || window.location.href);
   const logoSources = {
-    ccvne: 'assets/ccvne-logo.svg',
-    aeas: 'assets/aeas-logo.svg',
-    prr: 'assets/prr-nextgen-logo.svg',
+    ccvne: new URL('assets/ccvne-logo.svg', scriptBase).href,
+    aeas: new URL('assets/aeas-logo.svg', scriptBase).href,
+    prr: new URL('assets/prr-nextgen-logo.svg', scriptBase).href,
   };
 
   for (const image of document.querySelectorAll('img[data-logo]')) {

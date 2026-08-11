@@ -10,10 +10,11 @@
     "setup": "node scripts/setup-assets.mjs && node scripts/assemble-duel.mjs",
     "postinstall": "npm run setup",
     "build": "node scripts/build.mjs",
-    "check": "npm run assemble && tsc --noEmit && npm run build",
+    "check": "npm run assemble && tsc --noEmit && npm run build && npm run test:site",
     "kiosk": "node scripts/kiosk.mjs",
     "serve": "node scripts/static-server.mjs",
-    "test:smoke": "node scripts/smoke-test.mjs"
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "test:site": "node scripts/validate-site.mjs"
   },
   "dependencies": {
     "@mediapipe/hands": "0.4.1675469240",

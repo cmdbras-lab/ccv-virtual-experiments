@@ -2,239 +2,173 @@
 <html lang="pt-PT">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Ciência em Movimento — seis experiências científicas interativas controladas por gestos, incluindo o novo Duelo Gravitacional para dois jogadores.">
-  <meta name="theme-color" content="#071525">
-  <title>Ciência em Movimento — experiências científicas por gestos</title>
-  <link rel="stylesheet" href="styles.css">
-  <script defer src="site.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071727">
+  <meta name="author" content="Carlos Brás — Clube Ciência Viva Abel Salazar">
+  <meta name="description" content="Projetos educativos de robótica, movimento, interação gestual e equilíbrio químico desenvolvidos no Clube Ciência Viva Abel Salazar.">
+  <meta property="og:title" content="Experiências Interativas — Clube Ciência Viva Abel Salazar">
+  <meta property="og:description" content="Quatro projetos que transformam ciência, robótica e tecnologia em experiências para explorar, jogar e aprender.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://cmdbras-lab.github.io/ccv-virtual-experiments/duelo-mbot2/screenshots/ecra-publico.webp">
+  <title>Experiências Interativas — Clube Ciência Viva Abel Salazar</title>
+  <link rel="stylesheet" href="portfolio.css">
 </head>
 <body>
   <a class="skip-link" href="#conteudo">Saltar para o conteúdo</a>
 
   <header class="topbar">
-    <a class="brand" href="#inicio" aria-label="Ciência em Movimento — início">
-      <span class="brand-orbit" aria-hidden="true"><i></i></span>
-      <span><strong>Ciência em Movimento</strong><small>Clube Ciência Viva Abel Salazar</small></span>
+    <a class="brand" href="./" aria-label="Experiências Interativas — início">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span><strong>Experiências Interativas</strong><small>Clube Ciência Viva Abel Salazar</small></span>
     </a>
     <nav aria-label="Navegação principal">
-      <a href="#experiencias">Experiências</a>
-      <a href="#aplicacoes">Aplicações</a>
-      <a href="#funcionamento">Funcionamento</a>
-      <a href="#instalacao">Instalação</a>
-      <a class="nav-download" href="https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/latest" data-release-link>Descarregar</a>
+      <a href="#atividades">Atividades</a>
+      <a href="#projeto">O projeto</a>
+      <a class="nav-github" href="https://github.com/cmdbras-lab/ccv-virtual-experiments">GitHub</a>
     </nav>
   </header>
 
   <main id="conteudo">
-    <section class="hero" id="inicio">
+    <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Física e Química em movimento</p>
-        <h1>O corpo transforma-se num <span>laboratório interativo</span></h1>
-        <p class="lead">Uma plataforma educativa para ecrã grande e webcam. Os participantes veem o corpo e a mão representados no ecrã, escolhem uma experiência por gestos e aprendem conceitos científicos enquanto jogam.</p>
+        <p class="eyebrow">Ciência · robótica · aprendizagem ativa</p>
+        <h1>Ciência que se <span>programa, toca e observa.</span></h1>
+        <p class="lead">Quatro projetos educativos transformam conceitos científicos em experiências para jogar, experimentar e discutir — com robôs, gestos, telemóveis e simulações interativas.</p>
         <div class="hero-actions">
-          <a class="button primary" href="https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/latest" data-release-link>
-            <span>Descarregar versão mais recente</span>
-            <small data-release-version>A consultar o GitHub…</small>
-          </a>
-          <a class="button secondary" href="#duelo">Conhecer o novo duelo</a>
-        </div>
-        <div class="release-status" role="status" aria-live="polite">
-          <span class="status-dot"></span>
-          <span data-release-status>A verificar a última versão publicada</span>
+          <a class="button primary" href="#atividades">Conhecer as atividades</a>
+          <a class="button secondary" href="#projeto">Enquadramento pedagógico</a>
         </div>
       </div>
 
-      <div class="hero-visual" aria-label="Ilustração de dois planetas e um asteroide em trajetória curva">
-        <div class="stars"></div>
-        <div class="planet planet-a"><span class="moon moon-a"></span></div>
-        <div class="planet planet-b"><span class="moon moon-b"></span></div>
-        <div class="trajectory"></div>
-        <div class="asteroid"></div>
-        <div class="velocity-vector"><span>v</span></div>
-        <div class="force-vector"><span>a / F</span></div>
-        <div class="shuttle" title="Nave-cronómetro"></div>
-        <p>Duelo Gravitacional</p>
+      <div class="hero-map" aria-label="Quatro áreas do projeto: robótica, interação corporal, movimento e química">
+        <div class="map-core"><strong>CCV</strong><span>experimentar</span></div>
+        <div class="map-item item-robot"><b>01</b><span>Robótica</span></div>
+        <div class="map-item item-gesture"><b>02</b><span>Gestos</span></div>
+        <div class="map-item item-motion"><b>03</b><span>Movimento</span></div>
+        <div class="map-item item-chemistry"><b>04</b><span>Química</span></div>
       </div>
     </section>
 
-    <section class="feature" id="duelo">
-      <div class="feature-art" aria-hidden="true">
-        <div class="duel-panel">
-          <span class="player p1">JOGADOR 1</span>
-          <span class="player p2">JOGADOR 2</span>
-          <div class="mini-planet left"><i></i></div>
-          <div class="mini-planet right"><i></i></div>
-          <div class="curved-shot"></div>
-          <div class="moving-ship"></div>
-          <div class="vector-label velocity">velocidade</div>
-          <div class="vector-label acceleration">aceleração</div>
-        </div>
-      </div>
-      <div class="feature-copy">
-        <p class="eyebrow new">Nova experiência para dois jogadores</p>
-        <h2>Duelo Gravitacional</h2>
-        <p>Dois jogadores lançam asteroides para atingir o planeta adversário. O ataque direto é bloqueado por uma nave que atravessa o espaço e funciona como cronómetro: é necessário explorar trajetórias curvas e assistências gravíticas.</p>
-        <ul class="check-list">
-          <li>Campos gravíticos dos dois planetas alteram a trajetória.</li>
-          <li>Asteroides podem escapar, colidir ou ficar temporariamente em órbita.</li>
-          <li>Vetores velocidade, aceleração resultante e forças componentes visíveis.</li>
-          <li>Cada planeta possui uma pequena lua em translação.</li>
-          <li>Impactos provocam vibração do planeta e projeção de poeiras.</li>
-          <li>A mão do jogador fica limitada à sua zona de lançamento.</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="section" id="experiencias">
-      <div class="section-heading">
-        <p class="eyebrow">Seis módulos científicos</p>
-        <h2>Escolher, experimentar e compreender</h2>
-        <p>Todos os módulos usam uma interface comum, pontuação de 0 a 1000 e um Top global guardado apenas no computador da instalação.</p>
-      </div>
-
-      <div class="experience-grid">
-        <article class="experience-card orbit-card">
-          <span class="number">01</span><div class="icon orbit-icon"></div>
-          <h3>Coloca o planeta em órbita</h3>
-          <p>Define direção e intensidade, observa a trajetória prevista e mantém o planeta em órbita com os vetores velocidade e força gravítica.</p>
-          <span class="concepts">Gravitação · vetores · movimento orbital</span>
-        </article>
-
-        <article class="experience-card laser-card">
-          <span class="number">02</span><div class="icon laser-icon"></div>
-          <h3>Laboratório de lasers</h3>
-          <p>Orienta o espelho, acerta no alvo e compara os ângulos de incidência e reflexão assinalados no ecrã.</p>
-          <span class="concepts">Reflexão · normal · ângulos</span>
-        </article>
-
-        <article class="experience-card molecule-card">
-          <span class="number">03</span><div class="icon molecule-icon"></div>
-          <h3>Constrói uma molécula</h3>
-          <p>Completa água, dióxido de carbono, amoníaco ou metano e observa a molécula final a rodar com geometria e curiosidades.</p>
-          <span class="concepts">Ligações · geometria molecular · substâncias</span>
-        </article>
-
-        <article class="experience-card waves-card">
-          <span class="number">04</span><div class="icon waves-icon"></div>
-          <h3>Luz, ondas e espetro</h3>
-          <p>Organiza as cores do arco-íris e relaciona frequência, comprimento de onda, intensidade e cor da luz visível.</p>
-          <span class="concepts">Ondas · espetro visível · energia</span>
-        </article>
-
-        <article class="experience-card maze-card">
-          <span class="number">05</span><div class="icon maze-icon"></div>
-          <h3>Labirinto vetorial</h3>
-          <p>Conduz uma bola com inércia através do percurso, interpretando em tempo real os vetores velocidade e aceleração.</p>
-          <span class="concepts">Cinemática · inércia · atrito · colisões</span>
-        </article>
-
-        <article class="experience-card duel-card">
-          <span class="badge-new">NOVO</span><span class="number">06</span><div class="icon duel-icon"></div>
-          <h3>Duelo Gravitacional</h3>
-          <p>Compete a dois, cria lançamentos curvos, usa os campos gravíticos e protege o teu planeta enquanto a nave-cronómetro atravessa o sistema.</p>
-          <span class="concepts">Gravitação · forças · órbitas · estratégia</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="section standalone-apps" id="aplicacoes">
-      <div class="section-heading">
-        <p class="eyebrow">Aplicações pedagógicas autónomas</p>
-        <h2>Experimentar noutros ecrãs</h2>
-        <p>Projetos independentes do quiosque principal, preparados para utilização individual, em aula ou em casa.</p>
-      </div>
-      <div class="app-grid">
-        <article class="app-card">
-          <a class="app-visual" href="esfera-vetorial/" aria-label="Conhecer a Esfera Vetorial">
-            <img src="esfera-vetorial/screenshots/02-trajetoria.png" alt="Esfera Vetorial com trajetória desenhada e vetores">
-          </a>
-          <div class="app-copy">
-            <span>Android · Física</span>
-            <h3>Esfera Vetorial</h3>
-            <p>Inclina o telemóvel ou desenha uma trajetória e observa velocidade, aceleração e componentes cartesianas.</p>
-            <a href="esfera-vetorial/">Página e download →</a>
-          </div>
-        </article>
-        <article class="app-card chemistry-card">
-          <a class="app-visual" href="laboratorio-no2-n2o4/" aria-label="Conhecer o Laboratório NO2 N2O4">
-            <img src="laboratorio-no2-n2o4/screenshots/01-simulacao.png" alt="Laboratório NO2 N2O4 com recipiente molecular e gráficos">
-          </a>
-          <div class="app-copy">
-            <span>Web · Química</span>
-            <h3>Laboratório NO₂ ⇌ N₂O₄</h3>
-            <p>Comprime a mistura, separa o efeito físico da resposta química e acompanha Q<sub>c</sub>, K<sub>c</sub>, concentrações e cor.</p>
-            <a href="laboratorio-no2-n2o4/">Experimentar e descarregar →</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section how" id="funcionamento">
-      <div class="section-heading">
-        <p class="eyebrow">Interação natural</p>
-        <h2>Da presença ao gesto de jogar</h2>
-      </div>
-      <div class="steps">
-        <article><span>1</span><h3>Aproxima-te</h3><p>A câmara deteta localmente a presença e representa cabeça, tronco, braços e pernas. A imagem real não é apresentada.</p></article>
-        <article><span>2</span><h3>Descobre a mão</h3><p>Um círculo destaca a mão e explica o gesto de pinça. Depois da introdução, fica visível apenas a mão virtual.</p></article>
-        <article><span>3</span><h3>Escolhe</h3><p>Mantém a mão sobre um cartão durante o tempo de confirmação, reduzindo escolhas acidentais.</p></article>
-        <article><span>4</span><h3>Experimenta</h3><p>Faz pinça, arrasta, ajusta direção e intensidade e abre a mão para executar a ação.</p></article>
-      </div>
-    </section>
-
-    <section class="privacy-band">
-      <div><strong>Privacidade por conceção</strong><span>Processamento local, sem reconhecimento facial e sem gravação de vídeo ou áudio.</span></div>
-      <div><strong>Funciona offline</strong><span>Depois da instalação, os modelos de deteção e a aplicação permanecem no computador.</span></div>
-      <div><strong>Preparado para escolas</strong><span>Modo de demonstração com rato, ecrã inteiro, retorno automático ao menu e configuração ajustável.</span></div>
-    </section>
-
-    <section class="section install" id="instalacao">
-      <div class="install-copy">
-        <p class="eyebrow">Instalação em Windows</p>
-        <h2>Descarregar e começar</h2>
-        <ol>
-          <li>Descarrega o pacote de execução mais recente.</li>
-          <li>Descompacta-o numa pasta nova.</li>
-          <li>Executa <code>INSTALAR_WINDOWS.bat</code>.</li>
-          <li>Testa primeiro com <code>EXECUTAR_DEMO_WINDOWS.bat</code>.</li>
-          <li>Para usar a webcam, abre <code>EXECUTAR_WINDOWS.bat</code>.</li>
-        </ol>
-        <p class="requirements">Requer Windows 10/11, webcam, navegador moderno e Node.js LTS. Recomenda-se um ecrã 16:9 com resolução Full HD.</p>
-      </div>
-
-      <aside class="download-card">
-        <span class="download-label">VERSÃO MAIS RECENTE</span>
-        <strong data-release-version>GitHub Release</strong>
-        <p data-release-date>O site consulta automaticamente a Release marcada como mais recente.</p>
-        <a class="button primary wide" href="https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/latest" data-execution-download>Descarregar pacote de execução</a>
-        <a class="button secondary wide" href="https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/latest" data-complete-download>Pacote completo e código-fonte</a>
-        <a class="text-link" href="https://github.com/cmdbras-lab/ccv-virtual-experiments/releases/latest" data-release-link>Ver notas e todos os ficheiros da Release</a>
-        <p class="download-note" data-download-count></p>
-      </aside>
-    </section>
-
-    <section class="section project">
+    <section class="intro-band" id="projeto">
       <div>
-        <p class="eyebrow">Projeto educativo aberto</p>
-        <h2>Uma base para novas experiências criadas por alunos</h2>
-        <p>A arquitetura modular permite acrescentar experiências científicas, adaptar parâmetros de dificuldade e desenvolver novas atividades no Clube Ciência Viva.</p>
+        <p class="eyebrow">Um laboratório em vários formatos</p>
+        <h2>Da arena física à simulação molecular</h2>
       </div>
-      <div class="project-links">
-        <a href="https://github.com/cmdbras-lab/ccv-virtual-experiments">Consultar o repositório</a>
-        <a href="https://github.com/cmdbras-lab/ccv-virtual-experiments/issues/new?template=download-registration.yml">Registar utilização voluntariamente</a>
+      <p>As atividades foram concebidas para tornar visível aquilo que costuma ficar apenas nas equações: decisões de um algoritmo, movimento e vetores, forças, luz, geometria molecular e evolução de um equilíbrio químico. Podem apoiar aulas, clubes, demonstrações públicas e trabalho interdisciplinar.</p>
+    </section>
+
+    <section class="projects" id="atividades">
+      <div class="section-heading">
+        <p class="eyebrow">Quatro atividades desenvolvidas</p>
+        <h2>Escolha uma experiência</h2>
+        <p>Cada cartão conduz à respetiva página de divulgação, com objetivos, funcionamento e recursos disponíveis.</p>
+      </div>
+
+      <div class="project-grid">
+        <article class="project-card robot-card">
+          <a class="project-visual image-visual" href="duelo-mbot2/" aria-label="Conhecer o Duelo mBot2">
+            <img src="duelo-mbot2/screenshots/ecra-publico.webp" alt="Ecrã público do Duelo mBot2 com as equipas Azul e Laranja">
+            <span class="visual-label">Robótica · competição educativa</span>
+          </a>
+          <div class="project-copy">
+            <div class="project-number"><span>01</span><small>Acesso mediante contacto</small></div>
+            <h3>Duelo mBot2</h3>
+            <p>Duas equipas respondem a questões e conduzem ou programam os seus mBot2 para alcançar a zona colorida escolhida. Conhecimento, estratégia, rapidez e precisão contam para a pontuação.</p>
+            <ul>
+              <li>modos Programação, Live e Misto;</li>
+              <li>dois robôs, pista física e ecrã público;</li>
+              <li>questões de diferentes disciplinas e níveis.</li>
+            </ul>
+            <a class="card-link" href="duelo-mbot2/">Ver página de divulgação <span>→</span></a>
+          </div>
+        </article>
+
+        <article class="project-card movement-card">
+          <a class="project-visual science-visual" href="ciencia-em-movimento/" aria-label="Conhecer Ciência em Movimento">
+            <div class="science-stage" aria-hidden="true">
+              <span class="gesture-hand">☝</span>
+              <span class="orbit-ring"><i></i></span>
+              <span class="vector vector-v">v</span>
+              <span class="vector vector-a">a</span>
+              <span class="molecule-dot d1"></span><span class="molecule-dot d2"></span><span class="molecule-bond"></span>
+            </div>
+            <span class="visual-label">Ecrã grande · interação gestual</span>
+          </a>
+          <div class="project-copy">
+            <div class="project-number"><span>02</span><small>Plataforma com seis módulos</small></div>
+            <h3>Ciência em Movimento</h3>
+            <p>Uma webcam transforma o corpo e a mão em controladores de experiências científicas num ecrã grande, com interação local, desafios, explicações e pontuação.</p>
+            <ul>
+              <li>órbitas, reflexão da luz e moléculas;</li>
+              <li>ondas, espetro e labirinto vetorial;</li>
+              <li>duelo gravitacional para dois jogadores.</li>
+            </ul>
+            <a class="card-link" href="ciencia-em-movimento/">Ver página de divulgação <span>→</span></a>
+          </div>
+        </article>
+
+        <article class="project-card phone-card">
+          <a class="project-visual image-visual phone-visual" href="esfera-vetorial/" aria-label="Conhecer a aplicação Esfera Vetorial">
+            <img src="esfera-vetorial/screenshots/02-trajetoria.png" alt="Aplicação Esfera Vetorial com trajetória desenhada e vetores velocidade e aceleração">
+            <span class="visual-label">Android · estudo do movimento</span>
+          </a>
+          <div class="project-copy">
+            <div class="project-number"><span>03</span><small>Aplicação para telemóvel</small></div>
+            <h3>Esfera Vetorial</h3>
+            <p>O telemóvel torna-se um pequeno laboratório de cinemática: a esfera reage à inclinação do dispositivo ou percorre uma trajetória desenhada pelo aluno.</p>
+            <ul>
+              <li>vetores velocidade e aceleração;</li>
+              <li>componentes cartesianas, pausa e slow motion;</li>
+              <li>pistas, colisões, atrito e desafios.</li>
+            </ul>
+            <a class="card-link" href="esfera-vetorial/">Ver página e aplicação <span>→</span></a>
+          </div>
+        </article>
+
+        <article class="project-card chemistry-card">
+          <a class="project-visual image-visual" href="laboratorio-no2-n2o4/" aria-label="Conhecer a simulação do equilíbrio químico NO2 N2O4">
+            <img src="laboratorio-no2-n2o4/screenshots/01-simulacao.png" alt="Laboratório de equilíbrio químico com êmbolo, partículas, gráficos e concentrações">
+            <span class="visual-label">Web · Química 11.º ano</span>
+          </a>
+          <div class="project-copy">
+            <div class="project-number"><span>04</span><small>Simulação interativa</small></div>
+            <h3>Equilíbrio químico NO₂ ⇌ N₂O₄</h3>
+            <p>Uma compressão isotérmica é acompanhada ao nível molecular e quantitativo, distinguindo o efeito físico imediato do reajuste químico até ao novo equilíbrio.</p>
+            <ul>
+              <li>concentrações, Q<sub>c</sub>, K<sub>c</sub> e velocidades;</li>
+              <li>partículas e gráficos sincronizados;</li>
+              <li>cor da mistura nas vistas superior e lateral.</li>
+            </ul>
+            <a class="card-link" href="laboratorio-no2-n2o4/">Experimentar e saber mais <span>→</span></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="author-band">
+      <div>
+        <p class="eyebrow">Idealização e desenvolvimento</p>
+        <h2>Professor Carlos Brás</h2>
+        <p>Coordenador do Clube Ciência Viva Abel Salazar e responsável pelo desenvolvimento das aplicações, com recurso a inteligência artificial na programação.</p>
+      </div>
+      <div class="author-note">
+        <span>Projeto educativo</span>
+        <strong>2026</strong>
+        <small>Física · Química · Robótica · Tecnologia</small>
       </div>
     </section>
   </main>
 
   <footer>
-    <p class="credit">Desenvolvido pelo coordenador do Clube Ciência Viva Abel Salazar — professor Carlos Brás — julho 2026</p>
-    <div class="institutional-logos" aria-label="Entidades e programas associados">
-      <img data-logo="ccvne" alt="Clubes Ciência Viva na Escola">
-      <img data-logo="aeas" alt="Agrupamento de Escolas Abel Salazar">
-      <img data-logo="prr" alt="PRR — Plano de Recuperação e Resiliência, República Portuguesa, União Europeia e NextGenerationEU">
+    <div class="footer-logos" aria-label="Entidades e programas associados">
+      <img src="assets/ccvne-logo.svg" alt="Clubes Ciência Viva na Escola">
+      <img src="assets/aeas-logo.svg" alt="Agrupamento de Escolas Abel Salazar">
+      <img src="assets/prr-nextgen-logo.svg" alt="PRR, República Portuguesa, União Europeia e NextGenerationEU">
     </div>
-    <div class="footer-bottom"><span>Ciência em Movimento</span><span>Física, Química, tecnologia e aprendizagem ativa</span></div>
+    <div class="footer-bottom">
+      <span>Experiências Interativas · Clube Ciência Viva Abel Salazar</span>
+      <a href="https://github.com/cmdbras-lab/ccv-virtual-experiments">Repositório do projeto</a>
+    </div>
   </footer>
 </body>
 </html>

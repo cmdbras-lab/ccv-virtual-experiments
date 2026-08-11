@@ -41,6 +41,7 @@ jobs:
           npm run build
           node scripts/smoke-test.mjs
           node scripts/validate-runtime.mjs
+          node scripts/validate-site.mjs
 
       - name: Determinar versão
         id: meta
@@ -109,8 +110,13 @@ jobs:
         shell: bash
         run: |
           test -f site/index.html
+          test -f site/portfolio.css
           test -f site/styles.css
           test -f site/site.js
+          test -f site/ciencia-em-movimento/index.html
+          test -f site/duelo-mbot2/index.html
+          test -f site/esfera-vetorial/index.html
+          test -f site/laboratorio-no2-n2o4/index.html
           touch site/.nojekyll
 
       - name: Configurar GitHub Pages
