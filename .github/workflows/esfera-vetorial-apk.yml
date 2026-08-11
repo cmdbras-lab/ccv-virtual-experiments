@@ -57,3 +57,5 @@ jobs:
           path: apps/esfera-vetorial/build-src/EsferaVetorial/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+# source archive verified by SHA-256 before every build
