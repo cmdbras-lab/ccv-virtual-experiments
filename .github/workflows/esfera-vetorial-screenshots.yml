@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - esfera-vetorial-build
+      - main
     paths:
       - '.github/workflows/esfera-vetorial-screenshots.yml'
       - 'apps/esfera-vetorial/android/**'
@@ -19,7 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Apply v0.2.2 patch
+      - name: Apply compatibility patch when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/patch_v021.py') != '' }}
         working-directory: apps/esfera-vetorial/android
         run: python3 patch_v021.py
 
@@ -37,11 +39,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Prepare signing key and build
+      - name: Prepare legacy signing key when present
+        if: ${{ hashFiles('apps/esfera-vetorial/android/test-signing.keystore.b64') != '' }}
         working-directory: apps/esfera-vetorial/android
-        run: |
-          base64 -d test-signing.keystore.b64 > test-signing.keystore
-          gradle --no-daemon :app:assembleDebug
+        run: base64 -d test-signing.keystore.b64 > test-signing.keystore
+
+      - name: Build app
+        working-directory: apps/esfera-vetorial/android
+        run: gradle --no-daemon :app:assembleDebug
 
       - name: Capture app screens
         uses: reactivecircus/android-emulator-runner@v2
