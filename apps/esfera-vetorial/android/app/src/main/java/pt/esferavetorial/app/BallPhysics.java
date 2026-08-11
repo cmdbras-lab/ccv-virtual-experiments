@@ -5,14 +5,15 @@ public final class BallPhysics {
     public float displayAx, displayAy;
     public float distance;
     public boolean realSphere = true;
+    public boolean frictionEnabled = true;
     public boolean collidedThisFrame;
 
     private static final float REAL_SPHERE_FACTOR = 5f / 7f;
-    private static final float ROLLING_RESISTANCE = 0.020f;
-    private static final float LINEAR_DRAG = 0.035f;
-    private static final float RESTITUTION = 0.78f;
-    private static final float TANGENTIAL_DAMPING = 0.985f;
-    private static final float STOP_SPEED = 0.006f;
+    private static final float ROLLING_RESISTANCE = 0.028f;
+    private static final float LINEAR_DRAG = 0.045f;
+    private static final float RESTITUTION = 0.22f;
+    private static final float TANGENTIAL_DAMPING = 0.72f;
+    private static final float STOP_SPEED = 0.005f;
 
     public void reset(float widthM, float heightM) {
         x = widthM * 0.28f;
@@ -40,16 +41,23 @@ public final class BallPhysics {
         float baseAx = factor * gravityX;
         float baseAy = factor * gravityY;
 
-        float speed = speed();
         float frictionX = 0f;
         float frictionY = 0f;
-        if (speed > 1e-4f) {
-            frictionX = -ROLLING_RESISTANCE * vx / speed;
-            frictionY = -ROLLING_RESISTANCE * vy / speed;
+        float dragX = 0f;
+        float dragY = 0f;
+        float speed = speed();
+
+        if (frictionEnabled) {
+            if (speed > 1e-4f) {
+                frictionX = -ROLLING_RESISTANCE * vx / speed;
+                frictionY = -ROLLING_RESISTANCE * vy / speed;
+            }
+            dragX = -LINEAR_DRAG * vx;
+            dragY = -LINEAR_DRAG * vy;
         }
 
-        ax = baseAx + frictionX - LINEAR_DRAG * vx;
-        ay = baseAy + frictionY - LINEAR_DRAG * vy;
+        ax = baseAx + frictionX + dragX;
+        ay = baseAy + frictionY + dragY;
         displayAx = ax;
         displayAy = ay;
 
@@ -59,8 +67,10 @@ public final class BallPhysics {
         vx += ax * dt;
         vy += ay * dt;
 
-        if (Math.abs(baseAx) < ROLLING_RESISTANCE && Math.abs(vx) < STOP_SPEED) vx = 0f;
-        if (Math.abs(baseAy) < ROLLING_RESISTANCE && Math.abs(vy) < STOP_SPEED) vy = 0f;
+        if (frictionEnabled) {
+            if (Math.abs(baseAx) < ROLLING_RESISTANCE && Math.abs(vx) < STOP_SPEED) vx = 0f;
+            if (Math.abs(baseAy) < ROLLING_RESISTANCE && Math.abs(vy) < STOP_SPEED) vy = 0f;
+        }
 
         x += vx * dt;
         y += vy * dt;
@@ -73,19 +83,23 @@ public final class BallPhysics {
         if (x < left) {
             x = left;
             if (vx < 0f) {
-                float before = vx;
+                float beforeX = vx;
+                float beforeY = vy;
                 vx = -vx * RESTITUTION;
                 vy *= TANGENTIAL_DAMPING;
-                displayAx += (vx - before) / dt;
+                displayAx += (vx - beforeX) / dt;
+                displayAy += (vy - beforeY) / dt;
                 collidedThisFrame = true;
             }
         } else if (x > right) {
             x = right;
             if (vx > 0f) {
-                float before = vx;
+                float beforeX = vx;
+                float beforeY = vy;
                 vx = -vx * RESTITUTION;
                 vy *= TANGENTIAL_DAMPING;
-                displayAx += (vx - before) / dt;
+                displayAx += (vx - beforeX) / dt;
+                displayAy += (vy - beforeY) / dt;
                 collidedThisFrame = true;
             }
         }
@@ -93,19 +107,23 @@ public final class BallPhysics {
         if (y < top) {
             y = top;
             if (vy < 0f) {
-                float before = vy;
+                float beforeX = vx;
+                float beforeY = vy;
                 vy = -vy * RESTITUTION;
                 vx *= TANGENTIAL_DAMPING;
-                displayAy += (vy - before) / dt;
+                displayAx += (vx - beforeX) / dt;
+                displayAy += (vy - beforeY) / dt;
                 collidedThisFrame = true;
             }
         } else if (y > bottom) {
             y = bottom;
             if (vy > 0f) {
-                float before = vy;
+                float beforeX = vx;
+                float beforeY = vy;
                 vy = -vy * RESTITUTION;
                 vx *= TANGENTIAL_DAMPING;
-                displayAy += (vy - before) / dt;
+                displayAx += (vx - beforeX) / dt;
+                displayAy += (vy - beforeY) / dt;
                 collidedThisFrame = true;
             }
         }
