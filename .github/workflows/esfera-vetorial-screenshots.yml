@@ -63,14 +63,13 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            cd apps/esfera-vetorial/android
-            mkdir -p screenshots-ci
+            mkdir -p apps/esfera-vetorial/android/screenshots-ci
             adb shell wm size 1080x1920
             adb shell wm density 420
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb install -r apps/esfera-vetorial/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am start -n pt.esferavetorial.app/.MainActivity
             sleep 3
-            adb exec-out screencap -p > screenshots-ci/01-menu.png
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/01-menu.png
 
             adb shell input tap 540 1120
             sleep 2
@@ -85,7 +84,7 @@ jobs:
             sleep 1
             adb shell input tap 800 1585
             sleep 1
-            adb exec-out screencap -p > screenshots-ci/02-trajetoria.png
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/02-trajetoria.png
 
             adb shell input tap 965 80
             sleep 1
@@ -93,7 +92,7 @@ jobs:
             sleep 1
             for i in 1 2 3 4 5; do adb shell input tap 175 1720; sleep 0.25; done
             sleep 1
-            adb exec-out screencap -p > screenshots-ci/03-pista-oval.png
+            adb exec-out screencap -p > apps/esfera-vetorial/android/screenshots-ci/03-pista-oval.png
 
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
