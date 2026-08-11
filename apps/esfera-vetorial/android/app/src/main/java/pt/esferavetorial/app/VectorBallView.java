@@ -25,10 +25,11 @@ public final class VectorBallView extends View {
     private final ArrayDeque<PointF> trail = new ArrayDeque<>();
     private final RectF[] buttons = new RectF[6];
     private final RectF frictionToggle = new RectF();
-    private final RectF sensitivitySlider = new RectF();
-    private final RectF inertiaSlider = new RectF();
+    private final RectF massSlider = new RectF();
 
     private static final float CONTROL_DEAD_ZONE = 0.10f;
+    // Corresponde ao valor de Sensibilidade = 0% da v0.1.4, aprovado em teste real.
+    private static final float CONTROL_GAIN = 0.035f;
 
     private float sensorX, sensorY, sensorZ = 9.81f;
     private float zeroX, zeroY;
@@ -56,10 +57,9 @@ public final class VectorBallView extends View {
     private int mode;
     private boolean showVectors = true;
     private boolean showTrail = true;
-    private boolean draggingSensitivity;
-    private boolean draggingInertia;
-    private float sensitivitySetting = 0.55f;
-    private float inertiaSetting = 0.88f;
+    private boolean draggingMass;
+    // "Massa" é o controlo perceptivo de inércia/resposta do jogo.
+    private float massSetting = 0.88f;
 
     private final float targetXFraction = 0.75f;
     private final float targetYFraction = 0.46f;
@@ -117,13 +117,14 @@ public final class VectorBallView extends View {
     private float buttonRowsTopPx() {
         float margin = 8f * density;
         float gap = 6f * density;
-        float h = 42f * density;
+        float h = 40f * density;
         float y2 = getHeight() - systemBottomInsetPx - margin - h;
         return y2 - gap - h;
     }
 
     private float controlsTopPx() {
-        return buttonRowsTopPx() - 100f * density;
+        // Painel reduzido: apenas Massa + Atrito.
+        return buttonRowsTopPx() - 62f * density;
     }
 
     private float playableHeightM() {
@@ -165,13 +166,8 @@ public final class VectorBallView extends View {
         return Math.copySign(abs - CONTROL_DEAD_ZONE, value);
     }
 
-    private float controlGain() {
-        float shaped = (float) Math.pow(sensitivitySetting, 1.10);
-        return 0.035f + 0.245f * shaped;
-    }
-
     private float controlTauSeconds() {
-        float shaped = (float) Math.pow(inertiaSetting, 1.55);
+        float shaped = (float) Math.pow(massSetting, 1.55);
         return 0.06f + 1.34f * shaped;
     }
 
@@ -190,8 +186,8 @@ public final class VectorBallView extends View {
 
         float rawGravityX = -(sensorX - zeroX);
         float rawGravityY = (sensorY - zeroY);
-        float requestedX = controlGain() * deadZone(rawGravityX);
-        float requestedY = controlGain() * deadZone(rawGravityY);
+        float requestedX = CONTROL_GAIN * deadZone(rawGravityX);
+        float requestedY = CONTROL_GAIN * deadZone(rawGravityY);
         float smoothing = 1f - (float) Math.exp(-dt / controlTauSeconds());
         controlGravityX += smoothing * (requestedX - controlGravityX);
         controlGravityY += smoothing * (requestedY - controlGravityY);
@@ -363,9 +359,10 @@ public final class VectorBallView extends View {
         float cx = px(physics.x);
         float cy = px(physics.y);
 
-        float velocityScale = 1050f * density;
-        float accelerationScale = 220f * density;
-        float maxLength = Math.min(getWidth() * 0.72f, 300f * density);
+        // Escalas independentes por opção didática: a aceleração é ampliada muito mais.
+        float velocityScale = 2300f * density;      // ~2,2x a v0.1.4
+        float accelerationScale = 1400f * density; // ~6,4x a v0.1.4
+        float maxLength = Math.min(getWidth() * 1.30f, 440f * density);
 
         drawArrow(canvas, cx, cy,
                 physics.vx * velocityScale,
@@ -382,7 +379,7 @@ public final class VectorBallView extends View {
                            float dx, float dy, float maxLength,
                            int color, String label) {
         float length = (float) Math.hypot(dx, dy);
-        if (length < 1.5f * density) return;
+        if (length < 0.8f * density) return;
         if (length > maxLength) {
             float factor = maxLength / length;
             dx *= factor;
@@ -394,14 +391,14 @@ public final class VectorBallView extends View {
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(5.5f * density);
+        paint.setStrokeWidth(6.2f * density);
         paint.setColor(color);
         canvas.drawLine(x1, y1, x2, y2, paint);
 
         float ux = dx / length;
         float uy = dy / length;
-        float head = 16f * density;
-        float wing = 9f * density;
+        float head = 18f * density;
+        float wing = 10f * density;
         float bx = x2 - ux * head;
         float by = y2 - uy * head;
         float perpX = -uy;
@@ -414,9 +411,9 @@ public final class VectorBallView extends View {
         canvas.drawPath(path, paint);
 
         textPaint.setColor(color);
-        textPaint.setTextSize(20f * density);
+        textPaint.setTextSize(21f * density);
         textPaint.setFakeBoldText(true);
-        canvas.drawText(label, x2 + 8f * density, y2 - 7f * density, textPaint);
+        canvas.drawText(label, x2 + 9f * density, y2 - 8f * density, textPaint);
         textPaint.setFakeBoldText(false);
     }
 
@@ -455,7 +452,7 @@ public final class VectorBallView extends View {
         textPaint.setTextSize(11f * density);
         String sensor = !sensorAvailable ? "Sensor indisponível"
                 : (accelerometerFallback ? "Acelerómetro filtrado" : "Sensor de gravidade");
-        canvas.drawText(String.format(Locale.US, "%s • g∥ efetivo=(%.2f, %.2f) • percurso %.2f m",
+        canvas.drawText(String.format(Locale.US, "%s • g∥=(%.2f, %.2f) • percurso %.2f m • escalas v/a independentes",
                         sensor, effectiveGravityX, effectiveGravityY, physics.distance),
                 pad + 12f * density, boxTop + 111f * density, textPaint);
     }
@@ -474,10 +471,8 @@ public final class VectorBallView extends View {
         textPaint.setTextSize(11.5f * density);
         textPaint.setColor(Color.rgb(45, 52, 66));
         textPaint.setFakeBoldText(true);
-        canvas.drawText(String.format(Locale.US, "Sensibilidade  %d%%", Math.round(sensitivitySetting * 100f)),
-                panel.left + 12f * density, panel.top + 18f * density, textPaint);
-        canvas.drawText(String.format(Locale.US, "Inércia / resposta  %d%%", Math.round(inertiaSetting * 100f)),
-                panel.left + 12f * density, panel.top + 58f * density, textPaint);
+        canvas.drawText(String.format(Locale.US, "Massa  %d%%", Math.round(massSetting * 100f)),
+                panel.left + 12f * density, panel.top + 19f * density, textPaint);
         textPaint.setFakeBoldText(false);
 
         float toggleW = 86f * density;
@@ -498,24 +493,13 @@ public final class VectorBallView extends View {
 
         float sliderLeft = panel.left + 14f * density;
         float sliderRight = panel.right - 14f * density;
-        float sensitivityY = panel.top + 35f * density;
-        float inertiaY = panel.top + 76f * density;
-
-        sensitivitySlider.set(sliderLeft, sensitivityY - 12f * density,
-                sliderRight, sensitivityY + 12f * density);
-        inertiaSlider.set(sliderLeft, inertiaY - 12f * density,
-                sliderRight, inertiaY + 12f * density);
-
-        drawSlider(canvas, sliderLeft, sliderRight, sensitivityY, sensitivitySetting,
-                Color.rgb(45, 118, 165));
-        drawSlider(canvas, sliderLeft, sliderRight, inertiaY, inertiaSetting,
+        float sliderY = panel.bottom - 14f * density;
+        massSlider.set(sliderLeft, sliderY - 13f * density,
+                sliderRight, sliderY + 13f * density);
+        drawSlider(canvas, sliderLeft, sliderRight, sliderY, massSetting,
                 Color.rgb(55, 77, 126));
 
         textPaint.setTextAlign(Paint.Align.LEFT);
-        textPaint.setTextSize(9.5f * density);
-        textPaint.setColor(Color.rgb(95, 103, 118));
-        canvas.drawText("alta inércia = resposta mais lenta", panel.left + 12f * density,
-                panel.bottom - 5f * density, textPaint);
     }
 
     private void drawSlider(Canvas canvas, float left, float right, float y,
@@ -540,7 +524,7 @@ public final class VectorBallView extends View {
         };
         float margin = 8f * density;
         float gap = 6f * density;
-        float h = 42f * density;
+        float h = 40f * density;
         float totalW = getWidth() - 2f * margin;
         float w = (totalW - 2f * gap) / 3f;
         float y2 = getHeight() - systemBottomInsetPx - margin - h;
@@ -556,7 +540,7 @@ public final class VectorBallView extends View {
             paint.setColor(Color.argb(232, 35, 44, 62));
             canvas.drawRoundRect(buttons[i], 10f * density, 10f * density, paint);
             textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(12f * density);
+            textPaint.setTextSize(11.5f * density);
             textPaint.setColor(Color.WHITE);
             textPaint.setFakeBoldText(i == 1);
             canvas.drawText(labels[i], buttons[i].centerX(), buttons[i].centerY() + 4f * density, textPaint);
@@ -591,13 +575,8 @@ public final class VectorBallView extends View {
         return Math.max(0f, Math.min(1f, (x - left) / (right - left)));
     }
 
-    private void setSensitivityFromX(float x) {
-        sensitivitySetting = valueFromSliderX(sensitivitySlider, x);
-        invalidate();
-    }
-
-    private void setInertiaFromX(float x) {
-        inertiaSetting = valueFromSliderX(inertiaSlider, x);
+    private void setMassFromX(float x) {
+        massSetting = valueFromSliderX(massSlider, x);
         invalidate();
     }
 
@@ -607,41 +586,26 @@ public final class VectorBallView extends View {
         float y = event.getY();
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (sensitivitySlider.contains(x, y)) {
-                draggingSensitivity = true;
-                setSensitivityFromX(x);
-                return true;
-            }
-            if (inertiaSlider.contains(x, y)) {
-                draggingInertia = true;
-                setInertiaFromX(x);
+            if (massSlider.contains(x, y)) {
+                draggingMass = true;
+                setMassFromX(x);
                 return true;
             }
             return true;
         }
 
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (draggingSensitivity) {
-                setSensitivityFromX(x);
-                return true;
-            }
-            if (draggingInertia) {
-                setInertiaFromX(x);
+            if (draggingMass) {
+                setMassFromX(x);
                 return true;
             }
             return true;
         }
 
         if (event.getAction() == MotionEvent.ACTION_UP) {
-            if (draggingSensitivity) {
-                setSensitivityFromX(x);
-                draggingSensitivity = false;
-                performClick();
-                return true;
-            }
-            if (draggingInertia) {
-                setInertiaFromX(x);
-                draggingInertia = false;
+            if (draggingMass) {
+                setMassFromX(x);
+                draggingMass = false;
                 performClick();
                 return true;
             }
@@ -663,8 +627,7 @@ public final class VectorBallView extends View {
         }
 
         if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-            draggingSensitivity = false;
-            draggingInertia = false;
+            draggingMass = false;
         }
         return true;
     }
