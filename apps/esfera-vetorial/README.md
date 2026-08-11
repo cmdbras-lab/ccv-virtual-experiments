@@ -4,7 +4,7 @@
 
 > **Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar- junho 2026. (Programação com recurso IA).**
 
-[⬇️ **Descarregar APK — Esfera Vetorial v0.2.2**](downloads/EsferaVetorial-v0.2.2.apk)
+[⬇️ **Descarregar APK — Esfera Vetorial v0.2.2**](downloads/EsferaVetorial-v0.2.2.apk) · [🌐 **Página de divulgação**](https://cmdbras-lab.github.io/ccv-virtual-experiments/)
 
 ## O que é
 
@@ -53,10 +53,6 @@ O utilizador desenha uma trajetória diretamente no ecrã com o dedo. A aplicaç
 ### Pista oval
 
 ![Pista oval](screenshots/03-pista-oval.png)
-
-### Teste real em telemóvel durante o desenvolvimento
-
-![Teste real no telemóvel](screenshots/00-teste-real-telemovel.jpg)
 
 ## Ideias físicas que podem ser exploradas
 
