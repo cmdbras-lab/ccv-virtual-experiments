@@ -4,7 +4,7 @@
 
 Plataforma modular de experiências científicas controladas por gestos, preparada para funcionar autonomamente num televisor ou ecrã da escola.
 
-## Aplicações Android independentes
+## Aplicações pedagógicas independentes
 
 ### Esfera Vetorial
 
@@ -15,6 +15,17 @@ Aplicação pedagógica Android para explorar visualmente os vetores velocidade 
 - [**Descarregar Esfera Vetorial v0.2.2 (APK)**](apps/esfera-vetorial/downloads/EsferaVetorial-v0.2.2.apk)
 
 > Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar- junho 2026. (Programação com recurso IA).
+
+### Laboratório NO₂ ⇌ N₂O₄
+
+Aplicação web para explorar a compressão isotérmica do equilíbrio `2 NO₂(g) ⇌ N₂O₄(g)`. Apresenta animação molecular, concentrações, `Qc/Kc`, velocidades direta/inversa, gráficos, comparação ótica entre vistas superior e lateral e um desafio de previsão.
+
+- [**Experimentar no navegador**](https://cmdbras-lab.github.io/ccv-virtual-experiments/laboratorio-no2-n2o4/app/)
+- [**Página de divulgação e download**](https://cmdbras-lab.github.io/ccv-virtual-experiments/laboratorio-no2-n2o4/)
+- [**Código, documentação e guião didático**](apps/laboratorio-no2-n2o4/)
+- [**Descarregar Laboratório NO₂ ⇌ N₂O₄ v1.0.0**](apps/laboratorio-no2-n2o4/downloads/Laboratorio-NO2-N2O4-v1.0.0.zip)
+
+> Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar — agosto 2026. (Programação com recurso IA).
 
 ## Experiências incluídas
 

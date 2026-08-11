@@ -1,0 +1,30 @@
+{
+  "name": "laboratorio-no2-n2o4",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simulação didática da compressão isotérmica no equilíbrio 2 NO2(g) ⇌ N2O4(g).",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node scripts/validate.mjs"
+  },
+  "keywords": [
+    "quimica",
+    "equilibrio-quimico",
+    "no2",
+    "n2o4",
+    "simulacao",
+    "educacao"
+  ],
+  "license": "MIT",
+  "homepage": "https://cmdbras-lab.github.io/ccv-virtual-experiments/laboratorio-no2-n2o4/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cmdbras-lab/ccv-virtual-experiments.git",
+    "directory": "apps/laboratorio-no2-n2o4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
