@@ -4,6 +4,16 @@
 
 Plataforma modular de experiências científicas controladas por gestos, preparada para funcionar autonomamente num televisor ou ecrã da escola.
 
+## Portal público das atividades
+
+- [**Página-menu das Experiências Interativas**](https://cmdbras-lab.github.io/ccv-virtual-experiments/)
+- [**Duelo mBot2 — página de divulgação**](https://cmdbras-lab.github.io/ccv-virtual-experiments/duelo-mbot2/)
+- [**Ciência em Movimento — página de divulgação**](https://cmdbras-lab.github.io/ccv-virtual-experiments/ciencia-em-movimento/)
+- [**Esfera Vetorial — aplicação móvel**](https://cmdbras-lab.github.io/ccv-virtual-experiments/esfera-vetorial/)
+- [**Laboratório NO₂ ⇌ N₂O₄ — simulação química**](https://cmdbras-lab.github.io/ccv-virtual-experiments/laboratorio-no2-n2o4/)
+
+O Duelo mBot2 é divulgado sem download público. Escolas, professores e entidades interessadas devem contactar o professor Carlos Brás, coordenador do Clube Ciência Viva Abel Salazar e responsável pelo desenvolvimento da aplicação.
+
 ## Aplicações pedagógicas independentes
 
 ### Esfera Vetorial
