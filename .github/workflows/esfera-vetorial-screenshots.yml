@@ -1,0 +1,95 @@
+name: Screenshots Esfera Vetorial
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - esfera-vetorial-build
+    paths:
+      - '.github/workflows/esfera-vetorial-screenshots.yml'
+      - 'apps/esfera-vetorial/android/**'
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Apply v0.2.2 patch
+        working-directory: apps/esfera-vetorial/android
+        run: python3 patch_v021.py
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.5.1
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.1'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Prepare signing key and build
+        working-directory: apps/esfera-vetorial/android
+        run: |
+          base64 -d test-signing.keystore.b64 > test-signing.keystore
+          gradle --no-daemon :app:assembleDebug
+
+      - name: Capture app screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            cd apps/esfera-vetorial/android
+            mkdir -p screenshots-ci
+            adb shell wm size 1080x1920
+            adb shell wm density 420
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n pt.esferavetorial.app/.MainActivity
+            sleep 3
+            adb exec-out screencap -p > screenshots-ci/01-menu.png
+
+            # Modo 2
+            adb shell input tap 540 1120
+            sleep 2
+            adb shell input motionevent DOWN 160 700
+            adb shell input motionevent MOVE 280 630
+            adb shell input motionevent MOVE 400 820
+            adb shell input motionevent MOVE 520 650
+            adb shell input motionevent MOVE 640 850
+            adb shell input motionevent MOVE 760 630
+            adb shell input motionevent MOVE 900 790
+            adb shell input motionevent UP 900 790
+            sleep 1
+            adb shell input tap 800 1585
+            sleep 1
+            adb exec-out screencap -p > screenshots-ci/02-trajetoria.png
+
+            # Voltar ao menu e abrir Modo 1
+            adb shell input tap 965 80
+            sleep 1
+            adb shell input tap 540 620
+            sleep 1
+            # Avançar até à pista oval
+            for i in 1 2 3 4 5; do adb shell input tap 175 1720; sleep 0.25; done
+            sleep 1
+            adb exec-out screencap -p > screenshots-ci/03-pista-oval.png
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: esfera-vetorial-screenshots-v0.2.2
+          path: apps/esfera-vetorial/android/screenshots-ci/*.png
+          if-no-files-found: error
+          retention-days: 30
