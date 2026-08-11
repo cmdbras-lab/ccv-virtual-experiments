@@ -5,7 +5,7 @@ on:
     branches:
       - esfera-vetorial-build
     paths:
-      - 'apps/esfera-vetorial/**'
+      - 'apps/esfera-vetorial/source-b64/**'
       - '.github/workflows/esfera-vetorial-apk.yml'
   workflow_dispatch:
 
@@ -20,8 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Extract Esfera Vetorial source
+      - name: Reconstruct and verify source archive
         run: |
+          cat apps/esfera-vetorial/source-b64/chunk-*.b64 > apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip.b64
+          base64 -d apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip.b64 > apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip
+          echo '4a1df531504ec0c7854e2a5a048e6cd118fb56fd99643e03f7e5b2fd69704f0e  apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip' | sha256sum -c -
           rm -rf apps/esfera-vetorial/build-src
           mkdir -p apps/esfera-vetorial/build-src
           unzip -q apps/esfera-vetorial/EsferaVetorial-v0.1.0.zip -d apps/esfera-vetorial/build-src
@@ -36,7 +39,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.5.0'
-          cache-provider: basic
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
@@ -54,3 +56,4 @@ jobs:
           name: EsferaVetorial-v0.1.0-debug-apk
           path: apps/esfera-vetorial/build-src/EsferaVetorial/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 30
