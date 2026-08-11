@@ -14,7 +14,19 @@ android {
         versionName '0.1.2'
     }
 
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('test-signing.keystore')
+            storePassword 'esferavetorial-test'
+            keyAlias 'esferavetorial'
+            keyPassword 'esferavetorial-test'
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled false
         }
