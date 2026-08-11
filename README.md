@@ -4,6 +4,18 @@
 
 Plataforma modular de experiências científicas controladas por gestos, preparada para funcionar autonomamente num televisor ou ecrã da escola.
 
+## Aplicações Android independentes
+
+### Esfera Vetorial
+
+Aplicação pedagógica Android para explorar visualmente os vetores velocidade e aceleração. Inclui uma esfera controlada pela inclinação do telemóvel, desafios em pistas e um modo em que o utilizador desenha a trajetória que a esfera irá percorrer, com decomposição vetorial, pausa e slow motion.
+
+- [**Página de divulgação da Esfera Vetorial**](https://cmdbras-lab.github.io/ccv-virtual-experiments/)
+- [**Projeto, documentação e screenshots**](apps/esfera-vetorial/)
+- [**Descarregar Esfera Vetorial v0.2.2 (APK)**](apps/esfera-vetorial/downloads/EsferaVetorial-v0.2.2.apk)
+
+> Idealizado e desenvolvido por Carlos Brás @ Clube Ciência Viva Abel Salazar- junho 2026. (Programação com recurso IA).
+
 ## Experiências incluídas
 
 1. **Coloca o planeta em órbita** — lançamento assistido, trajetória prevista e observação de pelo menos três órbitas com os vetores velocidade e força gravítica.
