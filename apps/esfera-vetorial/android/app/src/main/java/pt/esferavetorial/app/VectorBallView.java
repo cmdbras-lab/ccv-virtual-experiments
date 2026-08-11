@@ -12,6 +12,7 @@ import android.graphics.Shader;
 import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
 
 import java.util.ArrayDeque;
 import java.util.Locale;
@@ -24,8 +25,13 @@ public final class VectorBallView extends View {
     private final ArrayDeque<PointF> trail = new ArrayDeque<>();
     private final RectF[] buttons = new RectF[6];
 
+    private static final float CONTROL_GAIN = 0.22f;
+    private static final float CONTROL_DEAD_ZONE = 0.08f;
+    private static final float CONTROL_TAU_SECONDS = 0.16f;
+
     private float sensorX, sensorY, sensorZ = 9.81f;
     private float zeroX, zeroY;
+    private float controlGravityX, controlGravityY;
     private boolean calibrated;
     private boolean sensorAvailable = true;
     private boolean accelerometerFallback;
@@ -33,11 +39,15 @@ public final class VectorBallView extends View {
     private float widthM = 0.075f;
     private float heightM = 0.160f;
     private float pixelsPerMeter;
-    private final float radiusM = 0.009f;
+    private final float radiusM = 0.0043f;
+
+    private int systemBottomInsetPx;
 
     private long lastFrameNanos;
     private long challengeStartMs;
     private long targetStableSinceMs;
+    private long impactVisibleUntilMs;
+    private float shownAx, shownAy;
     private float maxSpeed;
     private int score;
     private boolean success;
@@ -48,9 +58,9 @@ public final class VectorBallView extends View {
 
     private final float targetXFraction = 0.75f;
     private final float targetYFraction = 0.46f;
-    private final float targetRadiusM = 0.020f;
+    private final float targetRadiusM = 0.018f;
 
-    private float density;
+    private final float density;
 
     public VectorBallView(Context context) {
         super(context);
@@ -59,6 +69,23 @@ public final class VectorBallView extends View {
         setBackgroundColor(Color.rgb(247, 249, 252));
         setFocusable(true);
         for (int i = 0; i < buttons.length; i++) buttons[i] = new RectF();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        requestApplyInsets();
+    }
+
+    @Override
+    public WindowInsets onApplyWindowInsets(WindowInsets insets) {
+        int newBottom = insets.getSystemWindowInsetBottom();
+        if (newBottom != systemBottomInsetPx) {
+            systemBottomInsetPx = newBottom;
+            if (getWidth() > 0 && getHeight() > 0) resetSimulation();
+            invalidate();
+        }
+        return insets;
     }
 
     public void setSensorAvailable(boolean available, boolean fallback) {
@@ -82,9 +109,25 @@ public final class VectorBallView extends View {
         resetSimulation();
     }
 
+    private float controlsTopPx() {
+        float margin = 8f * density;
+        float gap = 6f * density;
+        float h = 42f * density;
+        return getHeight() - systemBottomInsetPx - margin - 2f * h - gap;
+    }
+
+    private float playableHeightM() {
+        if (pixelsPerMeter <= 0f) return heightM;
+        float bottomPx = Math.max(px(radiusM * 2f), controlsTopPx() - 10f * density);
+        return Math.min(heightM, bottomPx / pixelsPerMeter);
+    }
+
     private void resetSimulation() {
-        physics.reset(widthM, heightM);
+        physics.reset(widthM, playableHeightM());
         trail.clear();
+        controlGravityX = controlGravityY = 0f;
+        shownAx = shownAy = 0f;
+        impactVisibleUntilMs = 0L;
         maxSpeed = 0f;
         score = 0;
         success = false;
@@ -97,6 +140,7 @@ public final class VectorBallView extends View {
     private void calibratePlane(boolean reset) {
         zeroX = sensorX;
         zeroY = sensorY;
+        controlGravityX = controlGravityY = 0f;
         calibrated = true;
         if (reset) resetSimulation();
     }
@@ -105,18 +149,46 @@ public final class VectorBallView extends View {
         return meters * pixelsPerMeter;
     }
 
+    private float deadZone(float value) {
+        float abs = Math.abs(value);
+        if (abs <= CONTROL_DEAD_ZONE) return 0f;
+        return Math.copySign(abs - CONTROL_DEAD_ZONE, value);
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         long nowNanos = System.nanoTime();
-        if (lastFrameNanos == 0L) lastFrameNanos = nowNanos;
-        float dt = (nowNanos - lastFrameNanos) / 1_000_000_000f;
+        float dt;
+        if (lastFrameNanos == 0L) {
+            dt = 1f / 60f;
+        } else {
+            dt = (nowNanos - lastFrameNanos) / 1_000_000_000f;
+        }
         lastFrameNanos = nowNanos;
+        dt = Math.min(Math.max(dt, 1f / 240f), 0.035f);
 
-        float planeGravityX = -(sensorX - zeroX);
-        float planeGravityY = (sensorY - zeroY);
+        float rawGravityX = -(sensorX - zeroX);
+        float rawGravityY = (sensorY - zeroY);
+        float requestedX = CONTROL_GAIN * deadZone(rawGravityX);
+        float requestedY = CONTROL_GAIN * deadZone(rawGravityY);
+        float smoothing = 1f - (float) Math.exp(-dt / CONTROL_TAU_SECONDS);
+        controlGravityX += smoothing * (requestedX - controlGravityX);
+        controlGravityY += smoothing * (requestedY - controlGravityY);
 
-        physics.update(dt, planeGravityX, planeGravityY, widthM, heightM, radiusM);
+        physics.update(dt, controlGravityX, controlGravityY,
+                widthM, playableHeightM(), radiusM);
+
+        long nowMs = SystemClock.elapsedRealtime();
+        if (physics.collidedThisFrame) {
+            shownAx = physics.displayAx;
+            shownAy = physics.displayAy;
+            impactVisibleUntilMs = nowMs + 120L;
+        } else if (nowMs >= impactVisibleUntilMs) {
+            shownAx = physics.ax;
+            shownAy = physics.ay;
+        }
+
         maxSpeed = Math.max(maxSpeed, physics.speed());
         updateChallenge();
         updateTrail();
@@ -125,8 +197,9 @@ public final class VectorBallView extends View {
         if (mode != 0) drawTarget(canvas);
         if (showTrail) drawTrail(canvas);
         drawBall(canvas);
+        if (nowMs < impactVisibleUntilMs) drawImpactHalo(canvas);
         if (showVectors) drawVectors(canvas);
-        drawHud(canvas, planeGravityX, planeGravityY);
+        drawHud(canvas, controlGravityX, controlGravityY);
         drawButtons(canvas);
         if (success) drawSuccess(canvas);
 
@@ -140,17 +213,17 @@ public final class VectorBallView extends View {
         PointF last = trail.peekLast();
         if (last == null || Math.hypot(x - last.x, y - last.y) > 3.0f * density) {
             trail.addLast(new PointF(x, y));
-            while (trail.size() > 220) trail.removeFirst();
+            while (trail.size() > 260) trail.removeFirst();
         }
     }
 
     private void updateChallenge() {
         if (mode == 0 || success) return;
         float tx = widthM * targetXFraction;
-        float ty = heightM * targetYFraction;
+        float ty = playableHeightM() * targetYFraction;
         float distance = (float) Math.hypot(physics.x - tx, physics.y - ty);
         boolean inTarget = distance < targetRadiusM - radiusM * 0.15f;
-        boolean stopped = physics.speed() < 0.055f;
+        boolean stopped = physics.speed() < 0.040f;
         long now = SystemClock.elapsedRealtime();
 
         if (inTarget && stopped) {
@@ -179,7 +252,7 @@ public final class VectorBallView extends View {
 
         paint.setColor(Color.rgb(185, 193, 204));
         paint.setStrokeWidth(2f * density);
-        float y = getHeight() - 132f * density;
+        float y = controlsTopPx() - 22f * density;
         float x1 = 16f * density;
         float x2 = x1 + px(0.02f);
         canvas.drawLine(x1, y, x2, y, paint);
@@ -192,7 +265,7 @@ public final class VectorBallView extends View {
 
     private void drawTarget(Canvas canvas) {
         float tx = px(widthM * targetXFraction);
-        float ty = px(heightM * targetYFraction);
+        float ty = px(playableHeightM() * targetYFraction);
         float tr = px(targetRadiusM);
 
         paint.setStyle(Paint.Style.FILL);
@@ -219,8 +292,8 @@ public final class VectorBallView extends View {
             }
         }
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2f * density);
-        paint.setColor(Color.argb(135, 80, 90, 110));
+        paint.setStrokeWidth(1.7f * density);
+        paint.setColor(Color.argb(125, 80, 90, 110));
         canvas.drawPath(path, paint);
     }
 
@@ -238,7 +311,7 @@ public final class VectorBallView extends View {
         paint.setShader(null);
 
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2f * density);
+        paint.setStrokeWidth(1.7f * density);
         paint.setColor(Color.rgb(25, 40, 85));
         canvas.drawCircle(cx, cy, r, paint);
 
@@ -249,46 +322,65 @@ public final class VectorBallView extends View {
         path.reset();
         path.addCircle(cx, cy, r * 0.94f, Path.Direction.CW);
         canvas.clipPath(path);
-        paint.setStrokeWidth(3f * density);
+        paint.setStrokeWidth(2.2f * density);
         paint.setColor(Color.argb(180, 255, 255, 255));
         canvas.drawLine(cx - dx, cy - dy, cx + dx, cy + dy, paint);
         canvas.restore();
+    }
+
+    private void drawImpactHalo(Canvas canvas) {
+        float cx = px(physics.x);
+        float cy = px(physics.y);
+        float r = px(radiusM) + 7f * density;
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2.2f * density);
+        paint.setColor(Color.argb(170, 235, 125, 25));
+        canvas.drawCircle(cx, cy, r, paint);
     }
 
     private void drawVectors(Canvas canvas) {
         float cx = px(physics.x);
         float cy = px(physics.y);
 
-        float velocityScale = 115f * density;
-        float accelerationScale = 24f * density;
+        float velocityScale = 650f * density;
+        float accelerationScale = 110f * density;
+        float maxLength = 180f * density;
 
         drawArrow(canvas, cx, cy,
-                cx + physics.vx * velocityScale,
-                cy + physics.vy * velocityScale,
-                Color.rgb(22, 92, 210), "v");
+                physics.vx * velocityScale,
+                physics.vy * velocityScale,
+                maxLength, Color.rgb(22, 92, 210), "v");
 
         drawArrow(canvas, cx, cy,
-                cx + physics.ax * accelerationScale,
-                cy + physics.ay * accelerationScale,
-                Color.rgb(220, 55, 55), "a");
+                shownAx * accelerationScale,
+                shownAy * accelerationScale,
+                maxLength, Color.rgb(220, 55, 55), "a");
     }
 
-    private void drawArrow(Canvas canvas, float x1, float y1, float x2, float y2, int color, String label) {
-        float dx = x2 - x1;
-        float dy = y2 - y1;
+    private void drawArrow(Canvas canvas, float x1, float y1,
+                           float dx, float dy, float maxLength,
+                           int color, String label) {
         float length = (float) Math.hypot(dx, dy);
-        if (length < 5f * density) return;
+        if (length < 2f * density) return;
+        if (length > maxLength) {
+            float factor = maxLength / length;
+            dx *= factor;
+            dy *= factor;
+            length = maxLength;
+        }
+        float x2 = x1 + dx;
+        float y2 = y1 + dy;
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(4f * density);
+        paint.setStrokeWidth(4.5f * density);
         paint.setColor(color);
         canvas.drawLine(x1, y1, x2, y2, paint);
 
         float ux = dx / length;
         float uy = dy / length;
-        float head = 11f * density;
-        float wing = 6f * density;
+        float head = 13f * density;
+        float wing = 7f * density;
         float bx = x2 - ux * head;
         float by = y2 - uy * head;
         float perpX = -uy;
@@ -301,13 +393,13 @@ public final class VectorBallView extends View {
         canvas.drawPath(path, paint);
 
         textPaint.setColor(color);
-        textPaint.setTextSize(16f * density);
+        textPaint.setTextSize(18f * density);
         textPaint.setFakeBoldText(true);
-        canvas.drawText(label, x2 + 6f * density, y2 - 5f * density, textPaint);
+        canvas.drawText(label, x2 + 7f * density, y2 - 6f * density, textPaint);
         textPaint.setFakeBoldText(false);
     }
 
-    private void drawHud(Canvas canvas, float planeGravityX, float planeGravityY) {
+    private void drawHud(Canvas canvas, float effectiveGravityX, float effectiveGravityY) {
         float pad = 12f * density;
         float boxTop = 10f * density;
         float boxHeight = 118f * density;
@@ -335,15 +427,15 @@ public final class VectorBallView extends View {
                 pad + 12f * density, boxTop + 70f * density, textPaint);
         textPaint.setColor(Color.rgb(220, 55, 55));
         canvas.drawText(String.format(Locale.US, "a = %.2f m/s²  (ax %.2f | ay %.2f)",
-                        physics.acceleration(), physics.ax, physics.ay),
+                        Math.hypot(shownAx, shownAy), shownAx, shownAy),
                 pad + 12f * density, boxTop + 92f * density, textPaint);
 
         textPaint.setColor(Color.rgb(80, 88, 100));
         textPaint.setTextSize(11f * density);
         String sensor = !sensorAvailable ? "Sensor indisponível"
                 : (accelerometerFallback ? "Acelerómetro filtrado" : "Sensor de gravidade");
-        canvas.drawText(String.format(Locale.US, "%s • g∥=(%.2f, %.2f) m/s² • percurso %.2f m",
-                        sensor, planeGravityX, planeGravityY, physics.distance),
+        canvas.drawText(String.format(Locale.US, "%s • g∥ efetivo=(%.2f, %.2f) m/s² • percurso %.2f m",
+                        sensor, effectiveGravityX, effectiveGravityY, physics.distance),
                 pad + 12f * density, boxTop + 111f * density, textPaint);
     }
 
@@ -358,8 +450,8 @@ public final class VectorBallView extends View {
         float h = 42f * density;
         float totalW = getWidth() - 2f * margin;
         float w = (totalW - 2f * gap) / 3f;
-        float y1 = getHeight() - 2f * h - gap - margin;
-        float y2 = getHeight() - h - margin;
+        float y2 = getHeight() - systemBottomInsetPx - margin - h;
+        float y1 = y2 - gap - h;
 
         for (int i = 0; i < 6; i++) {
             int col = i % 3;
@@ -382,7 +474,7 @@ public final class VectorBallView extends View {
 
     private void drawSuccess(Canvas canvas) {
         float cx = getWidth() * 0.5f;
-        float cy = getHeight() * 0.72f;
+        float cy = controlsTopPx() * 0.75f;
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(235, 24, 135, 72));
         RectF box = new RectF(cx - 125f * density, cy - 48f * density,
