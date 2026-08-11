@@ -10,7 +10,7 @@ on:
       - 'apps/esfera-vetorial/android/**'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   screenshots:
@@ -60,7 +60,7 @@ jobs:
             sleep 3
             adb exec-out screencap -p > screenshots-ci/01-menu.png
 
-            # Modo 2
+            # Modo 2: desenhar e iniciar uma trajetória
             adb shell input tap 540 1120
             sleep 2
             adb shell input motionevent DOWN 160 700
@@ -76,20 +76,30 @@ jobs:
             sleep 1
             adb exec-out screencap -p > screenshots-ci/02-trajetoria.png
 
-            # Voltar ao menu e abrir Modo 1
+            # Voltar ao menu, Modo 1 e avançar até à pista oval
             adb shell input tap 965 80
             sleep 1
             adb shell input tap 540 620
             sleep 1
-            # Avançar até à pista oval
             for i in 1 2 3 4 5; do adb shell input tap 175 1720; sleep 0.25; done
             sleep 1
             adb exec-out screencap -p > screenshots-ci/03-pista-oval.png
 
-      - name: Upload screenshots
+      - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
         with:
           name: esfera-vetorial-screenshots-v0.2.2
           path: apps/esfera-vetorial/android/screenshots-ci/*.png
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish screenshots in repository
+        run: |
+          mkdir -p apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
+          cp apps/esfera-vetorial/android/screenshots-ci/*.png apps/esfera-vetorial/screenshots/
+          cp apps/esfera-vetorial/android/screenshots-ci/*.png docs/esfera-vetorial/screenshots/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/esfera-vetorial/screenshots docs/esfera-vetorial/screenshots
+          git commit -m "Adicionar screenshots Esfera Vetorial v0.2.2" || exit 0
+          git push
