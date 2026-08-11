@@ -24,10 +24,10 @@ public final class VectorBallView extends View {
     private final Path path = new Path();
     private final ArrayDeque<PointF> trail = new ArrayDeque<>();
     private final RectF[] buttons = new RectF[6];
+    private final RectF frictionToggle = new RectF();
+    private final RectF inertiaSlider = new RectF();
 
-    private static final float CONTROL_GAIN = 0.22f;
-    private static final float CONTROL_DEAD_ZONE = 0.08f;
-    private static final float CONTROL_TAU_SECONDS = 0.16f;
+    private static final float CONTROL_DEAD_ZONE = 0.10f;
 
     private float sensorX, sensorY, sensorZ = 9.81f;
     private float zeroX, zeroY;
@@ -55,6 +55,8 @@ public final class VectorBallView extends View {
     private int mode;
     private boolean showVectors = true;
     private boolean showTrail = true;
+    private boolean draggingInertia;
+    private float inertiaSetting = 0.82f;
 
     private final float targetXFraction = 0.75f;
     private final float targetYFraction = 0.46f;
@@ -109,11 +111,16 @@ public final class VectorBallView extends View {
         resetSimulation();
     }
 
-    private float controlsTopPx() {
+    private float buttonRowsTopPx() {
         float margin = 8f * density;
         float gap = 6f * density;
         float h = 42f * density;
-        return getHeight() - systemBottomInsetPx - margin - 2f * h - gap;
+        float y2 = getHeight() - systemBottomInsetPx - margin - h;
+        return y2 - gap - h;
+    }
+
+    private float controlsTopPx() {
+        return buttonRowsTopPx() - 64f * density;
     }
 
     private float playableHeightM() {
@@ -155,6 +162,15 @@ public final class VectorBallView extends View {
         return Math.copySign(abs - CONTROL_DEAD_ZONE, value);
     }
 
+    private float controlGain() {
+        return 0.24f + (0.045f - 0.24f) * inertiaSetting;
+    }
+
+    private float controlTauSeconds() {
+        float shaped = (float) Math.pow(inertiaSetting, 1.35);
+        return 0.08f + 0.66f * shaped;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -170,9 +186,9 @@ public final class VectorBallView extends View {
 
         float rawGravityX = -(sensorX - zeroX);
         float rawGravityY = (sensorY - zeroY);
-        float requestedX = CONTROL_GAIN * deadZone(rawGravityX);
-        float requestedY = CONTROL_GAIN * deadZone(rawGravityY);
-        float smoothing = 1f - (float) Math.exp(-dt / CONTROL_TAU_SECONDS);
+        float requestedX = controlGain() * deadZone(rawGravityX);
+        float requestedY = controlGain() * deadZone(rawGravityY);
+        float smoothing = 1f - (float) Math.exp(-dt / controlTauSeconds());
         controlGravityX += smoothing * (requestedX - controlGravityX);
         controlGravityY += smoothing * (requestedY - controlGravityY);
 
@@ -183,7 +199,7 @@ public final class VectorBallView extends View {
         if (physics.collidedThisFrame) {
             shownAx = physics.displayAx;
             shownAy = physics.displayAy;
-            impactVisibleUntilMs = nowMs + 120L;
+            impactVisibleUntilMs = nowMs + 150L;
         } else if (nowMs >= impactVisibleUntilMs) {
             shownAx = physics.ax;
             shownAy = physics.ay;
@@ -200,6 +216,7 @@ public final class VectorBallView extends View {
         if (nowMs < impactVisibleUntilMs) drawImpactHalo(canvas);
         if (showVectors) drawVectors(canvas);
         drawHud(canvas, controlGravityX, controlGravityY);
+        drawParameterPanel(canvas);
         drawButtons(canvas);
         if (success) drawSuccess(canvas);
 
@@ -331,10 +348,10 @@ public final class VectorBallView extends View {
     private void drawImpactHalo(Canvas canvas) {
         float cx = px(physics.x);
         float cy = px(physics.y);
-        float r = px(radiusM) + 7f * density;
+        float r = px(radiusM) + 8f * density;
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(2.2f * density);
-        paint.setColor(Color.argb(170, 235, 125, 25));
+        paint.setStrokeWidth(2.5f * density);
+        paint.setColor(Color.argb(180, 235, 125, 25));
         canvas.drawCircle(cx, cy, r, paint);
     }
 
@@ -342,9 +359,9 @@ public final class VectorBallView extends View {
         float cx = px(physics.x);
         float cy = px(physics.y);
 
-        float velocityScale = 650f * density;
-        float accelerationScale = 110f * density;
-        float maxLength = 180f * density;
+        float velocityScale = 1050f * density;
+        float accelerationScale = 220f * density;
+        float maxLength = Math.min(getWidth() * 0.72f, 300f * density);
 
         drawArrow(canvas, cx, cy,
                 physics.vx * velocityScale,
@@ -361,7 +378,7 @@ public final class VectorBallView extends View {
                            float dx, float dy, float maxLength,
                            int color, String label) {
         float length = (float) Math.hypot(dx, dy);
-        if (length < 2f * density) return;
+        if (length < 1.5f * density) return;
         if (length > maxLength) {
             float factor = maxLength / length;
             dx *= factor;
@@ -373,14 +390,14 @@ public final class VectorBallView extends View {
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(4.5f * density);
+        paint.setStrokeWidth(5.5f * density);
         paint.setColor(color);
         canvas.drawLine(x1, y1, x2, y2, paint);
 
         float ux = dx / length;
         float uy = dy / length;
-        float head = 13f * density;
-        float wing = 7f * density;
+        float head = 16f * density;
+        float wing = 9f * density;
         float bx = x2 - ux * head;
         float by = y2 - uy * head;
         float perpX = -uy;
@@ -393,9 +410,9 @@ public final class VectorBallView extends View {
         canvas.drawPath(path, paint);
 
         textPaint.setColor(color);
-        textPaint.setTextSize(18f * density);
+        textPaint.setTextSize(20f * density);
         textPaint.setFakeBoldText(true);
-        canvas.drawText(label, x2 + 7f * density, y2 - 6f * density, textPaint);
+        canvas.drawText(label, x2 + 8f * density, y2 - 7f * density, textPaint);
         textPaint.setFakeBoldText(false);
     }
 
@@ -434,9 +451,62 @@ public final class VectorBallView extends View {
         textPaint.setTextSize(11f * density);
         String sensor = !sensorAvailable ? "Sensor indisponível"
                 : (accelerometerFallback ? "Acelerómetro filtrado" : "Sensor de gravidade");
-        canvas.drawText(String.format(Locale.US, "%s • g∥ efetivo=(%.2f, %.2f) m/s² • percurso %.2f m",
+        canvas.drawText(String.format(Locale.US, "%s • g∥ efetivo=(%.2f, %.2f) • percurso %.2f m",
                         sensor, effectiveGravityX, effectiveGravityY, physics.distance),
                 pad + 12f * density, boxTop + 111f * density, textPaint);
+    }
+
+    private void drawParameterPanel(Canvas canvas) {
+        float margin = 8f * density;
+        float top = controlsTopPx();
+        float bottom = buttonRowsTopPx() - 7f * density;
+        RectF panel = new RectF(margin, top, getWidth() - margin, bottom);
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb(232, 255, 255, 255));
+        canvas.drawRoundRect(panel, 12f * density, 12f * density, paint);
+
+        textPaint.setTextAlign(Paint.Align.LEFT);
+        textPaint.setTextSize(12f * density);
+        textPaint.setColor(Color.rgb(45, 52, 66));
+        textPaint.setFakeBoldText(true);
+        canvas.drawText(String.format(Locale.US, "Inércia aparente  %d%%", Math.round(inertiaSetting * 100f)),
+                panel.left + 12f * density, panel.top + 19f * density, textPaint);
+        textPaint.setFakeBoldText(false);
+
+        float toggleW = 86f * density;
+        float toggleH = 27f * density;
+        frictionToggle.set(panel.right - toggleW - 8f * density,
+                panel.top + 6f * density,
+                panel.right - 8f * density,
+                panel.top + 6f * density + toggleH);
+        paint.setColor(physics.frictionEnabled ? Color.rgb(43, 125, 80) : Color.rgb(95, 103, 118));
+        canvas.drawRoundRect(frictionToggle, 10f * density, 10f * density, paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(11f * density);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setFakeBoldText(true);
+        canvas.drawText(physics.frictionEnabled ? "Atrito ON" : "Atrito OFF",
+                frictionToggle.centerX(), frictionToggle.centerY() + 4f * density, textPaint);
+        textPaint.setFakeBoldText(false);
+
+        float sliderLeft = panel.left + 14f * density;
+        float sliderRight = panel.right - 14f * density;
+        float sliderY = panel.bottom - 15f * density;
+        inertiaSlider.set(sliderLeft, sliderY - 13f * density, sliderRight, sliderY + 13f * density);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeWidth(4f * density);
+        paint.setColor(Color.rgb(180, 188, 199));
+        canvas.drawLine(sliderLeft, sliderY, sliderRight, sliderY, paint);
+
+        float knobX = sliderLeft + inertiaSetting * (sliderRight - sliderLeft);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(55, 77, 126));
+        canvas.drawCircle(knobX, sliderY, 8f * density, paint);
+
+        textPaint.setTextAlign(Paint.Align.LEFT);
     }
 
     private void drawButtons(Canvas canvas) {
@@ -491,17 +561,62 @@ public final class VectorBallView extends View {
         textPaint.setTextAlign(Paint.Align.LEFT);
     }
 
+    private void setInertiaFromX(float x) {
+        float left = inertiaSlider.left;
+        float right = inertiaSlider.right;
+        if (right <= left) return;
+        inertiaSetting = Math.max(0f, Math.min(1f, (x - left) / (right - left)));
+        invalidate();
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event.getAction() != MotionEvent.ACTION_UP) return true;
         float x = event.getX();
         float y = event.getY();
-        for (int i = 0; i < buttons.length; i++) {
-            if (buttons[i].contains(x, y)) {
-                handleButton(i);
+
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (inertiaSlider.contains(x, y)) {
+                draggingInertia = true;
+                setInertiaFromX(x);
+                return true;
+            }
+            return true;
+        }
+
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (draggingInertia) {
+                setInertiaFromX(x);
+                return true;
+            }
+            return true;
+        }
+
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (draggingInertia) {
+                setInertiaFromX(x);
+                draggingInertia = false;
                 performClick();
                 return true;
             }
+
+            if (frictionToggle.contains(x, y)) {
+                physics.frictionEnabled = !physics.frictionEnabled;
+                performClick();
+                invalidate();
+                return true;
+            }
+
+            for (int i = 0; i < buttons.length; i++) {
+                if (buttons[i].contains(x, y)) {
+                    handleButton(i);
+                    performClick();
+                    return true;
+                }
+            }
+        }
+
+        if (event.getAction() == MotionEvent.ACTION_CANCEL) {
+            draggingInertia = false;
         }
         return true;
     }
