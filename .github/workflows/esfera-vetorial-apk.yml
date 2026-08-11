@@ -1,5 +1,6 @@
 name: Build Esfera Vetorial APK
 
+# Pipeline de publicação pública da Esfera Vetorial v0.2.2.
 on:
   push:
     branches:
