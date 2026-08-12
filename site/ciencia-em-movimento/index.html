@@ -19,7 +19,7 @@
     </a>
     <nav aria-label="Navegação principal">
       <a href="../">Todas as atividades</a>
-      <a href="#experiencias">Experiências</a>
+      <a href="#experiencias">Em jogo</a>
       <a href="#aplicacoes">Aplicações</a>
       <a href="#funcionamento">Funcionamento</a>
       <a href="#instalacao">Instalação</a>
@@ -38,7 +38,7 @@
             <span>Descarregar versão mais recente</span>
             <small data-release-version>A consultar o GitHub…</small>
           </a>
-          <a class="button secondary" href="#duelo">Conhecer o novo duelo</a>
+          <a class="button secondary" href="#experiencias">Ver os seis jogos em ação</a>
         </div>
         <div class="release-status" role="status" aria-live="polite">
           <span class="status-dot"></span>
@@ -46,31 +46,52 @@
         </div>
       </div>
 
-      <div class="hero-visual" aria-label="Ilustração de dois planetas e um asteroide em trajetória curva">
-        <div class="stars"></div>
-        <div class="planet planet-a"><span class="moon moon-a"></span></div>
-        <div class="planet planet-b"><span class="moon moon-b"></span></div>
-        <div class="trajectory"></div>
-        <div class="asteroid"></div>
-        <div class="velocity-vector"><span>v</span></div>
-        <div class="force-vector"><span>a / F</span></div>
-        <div class="shuttle" title="Nave-cronómetro"></div>
-        <p>Duelo Gravitacional</p>
+      <div class="hero-showcase" aria-label="Experiências Ciência em Movimento em simulação">
+        <div class="showcase-topline">
+          <span class="live-pill"><i aria-hidden="true"></i> Em jogo</span>
+          <span>Capturas do modo de demonstração</span>
+        </div>
+        <button class="showcase-main gallery-trigger" type="button"
+          data-gallery-image="screenshots/01-orbita.webp"
+          data-gallery-title="Coloca o planeta em órbita"
+          data-gallery-caption="O planeta evolui em torno da estrela enquanto os vetores velocidade e força gravítica tornam visível a dinâmica orbital."
+          aria-label="Ampliar captura do jogo Coloca o planeta em órbita">
+          <img src="screenshots/01-orbita.webp" width="1600" height="900" fetchpriority="high"
+            alt="Simulação orbital com estrela, planeta, trajetória e vetores">
+          <span class="showcase-caption"><small>Experiência 01</small><strong>Coloca o planeta em órbita</strong></span>
+        </button>
+        <div class="showcase-thumbs">
+          <button class="showcase-thumb gallery-trigger" type="button"
+            data-gallery-image="screenshots/02-reflexao-luz.webp"
+            data-gallery-title="Laboratório de lasers"
+            data-gallery-caption="O feixe parte da esquerda, reflete no espelho e atinge o alvo; a normal e os ângulos de incidência e reflexão surgem medidos no ecrã."
+            aria-label="Ampliar captura do Laboratório de lasers">
+            <img src="screenshots/02-reflexao-luz.webp" width="1600" height="900" alt="Feixe laser refletido com ângulos de incidência e reflexão assinalados">
+            <span>Reflexão da luz</span>
+          </button>
+          <button class="showcase-thumb gallery-trigger" type="button"
+            data-gallery-image="screenshots/03-moleculas.webp"
+            data-gallery-title="Constrói uma molécula"
+            data-gallery-caption="Depois de colocar corretamente os átomos, a molécula completa roda no espaço e apresenta geometria e curiosidades sobre a substância."
+            aria-label="Ampliar captura do jogo Constrói uma molécula">
+            <img src="screenshots/03-moleculas.webp" width="1600" height="900" alt="Molécula de água completa com geometria e curiosidades">
+            <span>Moléculas em 3D</span>
+          </button>
+        </div>
       </div>
     </section>
 
     <section class="feature" id="duelo">
-      <div class="feature-art" aria-hidden="true">
-        <div class="duel-panel">
-          <span class="player p1">JOGADOR 1</span>
-          <span class="player p2">JOGADOR 2</span>
-          <div class="mini-planet left"><i></i></div>
-          <div class="mini-planet right"><i></i></div>
-          <div class="curved-shot"></div>
-          <div class="moving-ship"></div>
-          <div class="vector-label velocity">velocidade</div>
-          <div class="vector-label acceleration">aceleração</div>
-        </div>
+      <div class="feature-art">
+        <button class="feature-screenshot gallery-trigger" type="button"
+          data-gallery-image="screenshots/06-duelo-gravitacional.webp"
+          data-gallery-title="Duelo Gravitacional"
+          data-gallery-caption="O jogador prepara um lançamento curvo: a linha tracejada antecipa a trajetória já influenciada pelos campos gravíticos dos dois planetas."
+          aria-label="Ampliar captura do Duelo Gravitacional">
+          <img src="screenshots/06-duelo-gravitacional.webp" width="1600" height="900" loading="lazy"
+            alt="Duelo Gravitacional com dois planetas, nave e trajetória prevista do asteroide">
+          <span><strong>Trajetória prevista em tempo real</strong><small>Clica para ampliar a captura</small></span>
+        </button>
       </div>
       <div class="feature-copy">
         <p class="eyebrow new">Nova experiência para dois jogadores</p>
@@ -90,54 +111,128 @@
     <section class="section" id="experiencias">
       <div class="section-heading">
         <p class="eyebrow">Seis módulos científicos</p>
-        <h2>Escolher, experimentar e compreender</h2>
-        <p>Todos os módulos usam uma interface comum, pontuação de 0 a 1000 e um Top global guardado apenas no computador da instalação.</p>
+        <h2>As experiências em ação</h2>
+        <p>Capturas geradas diretamente pelo motor da aplicação em modo de demonstração. Cada jogo usa uma interface comum, pontuação de 0 a 1000 e um Top global guardado apenas no computador da instalação.</p>
+        <p class="gallery-hint"><span aria-hidden="true">↗</span> Seleciona qualquer imagem para a observar em tamanho maior.</p>
       </div>
 
       <div class="experience-grid">
         <article class="experience-card orbit-card">
-          <span class="number">01</span><div class="icon orbit-icon"></div>
-          <h3>Coloca o planeta em órbita</h3>
-          <p>Define direção e intensidade, observa a trajetória prevista e mantém o planeta em órbita com os vetores velocidade e força gravítica.</p>
-          <span class="concepts">Gravitação · vetores · movimento orbital</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/01-orbita.webp"
+            data-gallery-title="Coloca o planeta em órbita"
+            data-gallery-caption="O planeta evolui em torno da estrela enquanto os vetores velocidade e força gravítica tornam visível a dinâmica orbital."
+            aria-label="Ampliar captura do jogo Coloca o planeta em órbita">
+            <img src="screenshots/01-orbita.webp" width="1600" height="900" loading="lazy" alt="Planeta em movimento orbital em torno de uma estrela">
+            <span class="game-state">Órbita em evolução</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">01</span>
+            <h3>Coloca o planeta em órbita</h3>
+            <p>Define direção e intensidade, observa a trajetória prevista e mantém o planeta em órbita com os vetores velocidade e força gravítica.</p>
+            <span class="concepts">Gravitação · vetores · movimento orbital</span>
+          </div>
         </article>
 
         <article class="experience-card laser-card">
-          <span class="number">02</span><div class="icon laser-icon"></div>
-          <h3>Laboratório de lasers</h3>
-          <p>Orienta o espelho, acerta no alvo e compara os ângulos de incidência e reflexão assinalados no ecrã.</p>
-          <span class="concepts">Reflexão · normal · ângulos</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/02-reflexao-luz.webp"
+            data-gallery-title="Laboratório de lasers"
+            data-gallery-caption="O feixe parte da esquerda, reflete no espelho e atinge o alvo; a normal e os ângulos de incidência e reflexão surgem medidos no ecrã."
+            aria-label="Ampliar captura do Laboratório de lasers">
+            <img src="screenshots/02-reflexao-luz.webp" width="1600" height="900" loading="lazy" alt="Reflexão do laser com normal e ângulos i e r iguais a 74 graus">
+            <span class="game-state">i = r assinalados</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">02</span>
+            <h3>Laboratório de lasers</h3>
+            <p>Orienta o espelho, acerta no alvo e compara os ângulos de incidência e reflexão assinalados no ecrã.</p>
+            <span class="concepts">Reflexão · normal · ângulos</span>
+          </div>
         </article>
 
         <article class="experience-card molecule-card">
-          <span class="number">03</span><div class="icon molecule-icon"></div>
-          <h3>Constrói uma molécula</h3>
-          <p>Completa água, dióxido de carbono, amoníaco ou metano e observa a molécula final a rodar com geometria e curiosidades.</p>
-          <span class="concepts">Ligações · geometria molecular · substâncias</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/03-moleculas.webp"
+            data-gallery-title="Constrói uma molécula"
+            data-gallery-caption="Depois de colocar corretamente os átomos, a molécula completa roda no espaço e apresenta geometria e curiosidades sobre a substância."
+            aria-label="Ampliar captura do jogo Constrói uma molécula">
+            <img src="screenshots/03-moleculas.webp" width="1600" height="900" loading="lazy" alt="Molécula de água completa com geometria angular e curiosidades">
+            <span class="game-state">Molécula completa</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">03</span>
+            <h3>Constrói uma molécula</h3>
+            <p>Completa água, dióxido de carbono, amoníaco ou metano e observa a molécula final a rodar com geometria e curiosidades.</p>
+            <span class="concepts">Ligações · geometria molecular · substâncias</span>
+          </div>
         </article>
 
         <article class="experience-card waves-card">
-          <span class="number">04</span><div class="icon waves-icon"></div>
-          <h3>Luz, ondas e espetro</h3>
-          <p>Organiza as cores do arco-íris e relaciona frequência, comprimento de onda, intensidade e cor da luz visível.</p>
-          <span class="concepts">Ondas · espetro visível · energia</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/04-ondas-espetro.webp"
+            data-gallery-title="Luz, ondas e espetro"
+            data-gallery-caption="O participante ajusta comprimento de onda e amplitude até fazer coincidir a onda produzida com a onda-alvo de cada cor."
+            aria-label="Ampliar captura do jogo Luz, ondas e espetro">
+            <img src="screenshots/04-ondas-espetro.webp" width="1600" height="900" loading="lazy" alt="Duas ondas luminosas em comparação com espetro visível e comprimento de onda">
+            <span class="game-state">Onda em ajuste</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">04</span>
+            <h3>Luz, ondas e espetro</h3>
+            <p>Organiza as cores do arco-íris e relaciona frequência, comprimento de onda, intensidade e cor da luz visível.</p>
+            <span class="concepts">Ondas · espetro visível · energia</span>
+          </div>
         </article>
 
         <article class="experience-card maze-card">
-          <span class="number">05</span><div class="icon maze-icon"></div>
-          <h3>Labirinto vetorial</h3>
-          <p>Conduz uma bola com inércia através do percurso, interpretando em tempo real os vetores velocidade e aceleração.</p>
-          <span class="concepts">Cinemática · inércia · atrito · colisões</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/05-labirinto-vetorial.webp"
+            data-gallery-title="Labirinto vetorial"
+            data-gallery-caption="A mão aplica uma força à bola; velocidade, aceleração e direção do controlo surgem simultaneamente durante o percurso."
+            aria-label="Ampliar captura do Labirinto vetorial">
+            <img src="screenshots/05-labirinto-vetorial.webp" width="1600" height="900" loading="lazy" alt="Bola num labirinto com vetores velocidade, aceleração e força aplicada">
+            <span class="game-state">Força aplicada</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">05</span>
+            <h3>Labirinto vetorial</h3>
+            <p>Conduz uma bola com inércia através do percurso, interpretando em tempo real os vetores velocidade e aceleração.</p>
+            <span class="concepts">Cinemática · inércia · atrito · colisões</span>
+          </div>
         </article>
 
         <article class="experience-card duel-card">
-          <span class="badge-new">NOVO</span><span class="number">06</span><div class="icon duel-icon"></div>
-          <h3>Duelo Gravitacional</h3>
-          <p>Compete a dois, cria lançamentos curvos, usa os campos gravíticos e protege o teu planeta enquanto a nave-cronómetro atravessa o sistema.</p>
-          <span class="concepts">Gravitação · forças · órbitas · estratégia</span>
+          <button class="experience-visual gallery-trigger" type="button"
+            data-gallery-image="screenshots/06-duelo-gravitacional.webp"
+            data-gallery-title="Duelo Gravitacional"
+            data-gallery-caption="O jogador prepara um lançamento curvo: a linha tracejada antecipa a trajetória já influenciada pelos campos gravíticos dos dois planetas."
+            aria-label="Ampliar captura do Duelo Gravitacional">
+            <img src="screenshots/06-duelo-gravitacional.webp" width="1600" height="900" loading="lazy" alt="Dois planetas e trajetória curva prevista para o lançamento de um asteroide">
+            <span class="game-state">Trajetória prevista</span>
+            <span class="badge-new">NOVO</span>
+          </button>
+          <div class="experience-copy">
+            <span class="number">06</span>
+            <h3>Duelo Gravitacional</h3>
+            <p>Compete a dois, cria lançamentos curvos, usa os campos gravíticos e protege o teu planeta enquanto a nave-cronómetro atravessa o sistema.</p>
+            <span class="concepts">Gravitação · forças · órbitas · estratégia</span>
+          </div>
         </article>
       </div>
     </section>
+
+    <dialog class="gallery-dialog" id="gallery-dialog" aria-labelledby="gallery-title">
+      <div class="gallery-dialog-panel">
+        <button class="gallery-close" type="button" data-gallery-close aria-label="Fechar imagem ampliada">×</button>
+        <img data-gallery-full alt="">
+        <div class="gallery-dialog-copy">
+          <p class="eyebrow">Captura do jogo em modo de demonstração</p>
+          <h2 id="gallery-title" data-gallery-title></h2>
+          <p data-gallery-caption></p>
+        </div>
+      </div>
+    </dialog>
 
     <section class="section standalone-apps" id="aplicacoes">
       <div class="section-heading">

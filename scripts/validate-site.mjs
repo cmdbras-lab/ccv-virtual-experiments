@@ -8,6 +8,12 @@ const requiredFiles = [
   'index.html',
   'portfolio.css',
   'ciencia-em-movimento/index.html',
+  'ciencia-em-movimento/screenshots/01-orbita.webp',
+  'ciencia-em-movimento/screenshots/02-reflexao-luz.webp',
+  'ciencia-em-movimento/screenshots/03-moleculas.webp',
+  'ciencia-em-movimento/screenshots/04-ondas-espetro.webp',
+  'ciencia-em-movimento/screenshots/05-labirinto-vetorial.webp',
+  'ciencia-em-movimento/screenshots/06-duelo-gravitacional.webp',
   'duelo-mbot2/index.html',
   'duelo-mbot2/duelo.css',
   'duelo-mbot2/screenshots/ecra-publico.webp',
@@ -88,6 +94,26 @@ for (const requiredText of ['Professor Carlos Brás', 'Programação', 'Live', '
 }
 if (/href=["'][^"']*(?:\.zip|\.apk|\/releases\/|ccv-mbot-duelo)/i.test(duel)) {
   throw new Error('A página Duelo mBot2 não pode disponibilizar software ou ligar ao repositório da aplicação.');
+}
+
+const movement = await readFile(path.join(site, 'ciencia-em-movimento', 'index.html'), 'utf8');
+if ((movement.match(/class="experience-card/g) || []).length !== 6) {
+  throw new Error('A página Ciência em Movimento deve apresentar exatamente seis experiências.');
+}
+for (const screenshot of [
+  '01-orbita.webp',
+  '02-reflexao-luz.webp',
+  '03-moleculas.webp',
+  '04-ondas-espetro.webp',
+  '05-labirinto-vetorial.webp',
+  '06-duelo-gravitacional.webp',
+]) {
+  if (!movement.includes(`screenshots/${screenshot}`)) {
+    throw new Error(`A página Ciência em Movimento não apresenta a captura ${screenshot}.`);
+  }
+}
+if (!movement.includes('id="gallery-dialog"')) {
+  throw new Error('A página Ciência em Movimento deve permitir ampliar as capturas.');
 }
 
 console.log(`Site validado: ${htmlFiles.length} páginas HTML, quatro atividades e nenhuma ligação local partida.`);
