@@ -17,6 +17,39 @@
     if (source) image.src = source;
   }
 
+  const galleryDialog = document.querySelector('#gallery-dialog');
+  const galleryImage = galleryDialog?.querySelector('[data-gallery-full]');
+  const galleryTitle = galleryDialog?.querySelector('[data-gallery-title]');
+  const galleryCaption = galleryDialog?.querySelector('[data-gallery-caption]');
+  let galleryReturnFocus = null;
+
+  const closeGallery = () => {
+    if (!galleryDialog) return;
+    if (typeof galleryDialog.close === 'function') galleryDialog.close();
+    else galleryDialog.removeAttribute('open');
+  };
+
+  if (galleryDialog && galleryImage && galleryTitle && galleryCaption) {
+    for (const trigger of document.querySelectorAll('[data-gallery-image]')) {
+      trigger.addEventListener('click', () => {
+        const preview = trigger.querySelector('img');
+        galleryImage.src = trigger.dataset.galleryImage || '';
+        galleryImage.alt = preview?.alt || trigger.dataset.galleryTitle || 'Captura ampliada do jogo';
+        galleryTitle.textContent = trigger.dataset.galleryTitle || '';
+        galleryCaption.textContent = trigger.dataset.galleryCaption || '';
+        galleryReturnFocus = trigger;
+        if (typeof galleryDialog.showModal === 'function') galleryDialog.showModal();
+        else galleryDialog.setAttribute('open', '');
+      });
+    }
+
+    galleryDialog.querySelector('[data-gallery-close]')?.addEventListener('click', closeGallery);
+    galleryDialog.addEventListener('click', (event) => {
+      if (event.target === galleryDialog) closeGallery();
+    });
+    galleryDialog.addEventListener('close', () => galleryReturnFocus?.focus());
+  }
+
   const setText = (selector, value) => {
     for (const element of document.querySelectorAll(selector)) element.textContent = value;
   };
